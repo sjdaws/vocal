@@ -46,7 +46,7 @@ The first thing you need to do is add `lakedawson/vocal` as a requirement to `co
 ```javascript
 {
     "require": {
-        "lakedawson/vocal": "1.1.*"
+        "lakedawson/vocal": "0.1.*"
     }
 }
 ```
