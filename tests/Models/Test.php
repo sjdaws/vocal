@@ -14,19 +14,12 @@ class Test extends Vocal
     protected $fillable = array('description');
 
     /**
-     * We should fill this model automatically from input
-     *
-     * @var bool
-     */
-    protected $fillFromInput = false;
-
-    /**
      * The rules for validating this model
      *
      * @var array
      */
     protected $rules = array(
-        'description' => array('required', 'unique:~table,~field,~id,id,description')
+        'description' => array('required', 'unique')
     );
 
     /*********************************************************************************************

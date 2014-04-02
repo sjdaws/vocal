@@ -21,7 +21,7 @@ class TestCase extends \Orchestra\Testbench\TestCase
         if (is_object($model))
         {
             // If we have errors, add them in
-            if ($model->errors->count()) $error .= print_r($model->errors(), true);
+            if (count($model->errors())) $error .= print_r($model->errors(), true);
 
             // Add model in so we can see where we went wrong
             $error .= print_r($model->toArray(), true);
@@ -74,7 +74,7 @@ class TestCase extends \Orchestra\Testbench\TestCase
      *
      * @return void
      */
-    public function testR()
+    public function testVocal()
     {
         $input = $this->app->make('request');
 
@@ -138,7 +138,7 @@ class TestCase extends \Orchestra\Testbench\TestCase
         $result = $record->saveRecursive();
 
         // Check save was successful
-        $this->assertTrue($result, $this->errorResponse('Record was not updated', $test));
+        $this->assertTrue($result, $this->errorResponse('Record was not updated', $record));
 
         // Get all records
         $record = Test::with('children')->find(1);

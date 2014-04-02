@@ -560,7 +560,7 @@ class Vocal extends Model
                     break;
                 }
 
-                $record = (isset($child[$key])) ? $class->find($child[$key]) : new $class;
+                $record = (isset($childData[$key])) ? $class->find($childData[$key]) : new $class;
                 $result = $record->validateRecursive($childRules, $childMessages, $childData);
 
                 // Add errors to parent if we have some
