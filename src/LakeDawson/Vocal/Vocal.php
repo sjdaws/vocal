@@ -121,23 +121,20 @@ class Vocal extends Model
                     $parameters = null;
                 }
 
-                // Break up parameters if we have them
-                if ($parameters) $parameters = explode(',', $parameters);
+                // Make parameters into an array
+                $parameters = (strpos($parameters, ',') > 0) ? explode(',', $parameters) : array($parameters);
 
                 // Process each parameter
-                if (! empty($parameters))
+                foreach ($parameters as &$parameter)
                 {
-                    foreach ($parameters as &$parameter)
+                    if (strpos($parameter, '~') !== false)
                     {
-                        if (strpos($parameter, '~') !== false)
-                        {
-                            // Replace ~table and ~field unless we have an attribute with the same name
-                            if ($parameter == '~table' && ! $this->{str_replace('~', '', $parameter)}) $parameter = $this->getTable();
-                            if ($parameter == '~field' && ! $this->{str_replace('~', '', $parameter)}) $parameter = $field;
+                        // Replace ~table and ~field unless we have an attribute with the same name
+                        if ($parameter == '~table' && ! $this->{str_replace('~', '', $parameter)}) $parameter = $this->getTable();
+                        if ($parameter == '~field' && ! $this->{str_replace('~', '', $parameter)}) $parameter = $field;
 
-                            // Replace with attribute if we haven't replaced yet
-                            if (strpos($parameter, '~') !== false) $parameter = $this->{str_replace('~', '', $parameter)};
-                        }
+                        // Replace with attribute if we haven't replaced yet
+                        if (strpos($parameter, '~') !== false) $parameter = $this->{str_replace('~', '', $parameter)};
                     }
                 }
 
@@ -146,27 +143,24 @@ class Vocal extends Model
                 {
                     $uniqueRule = array();
 
-                    // If we have all the parameters set, use them as is
-                    if (count($parameters) > 1) $uniqueRule = $parameters;
+                    // Build up the rule to make sure it's correct
+                    if (isset($parameters[0])) $uniqueRule[] = $parameters[0];
+                    else $uniqueRule[] = $this->getTable();
 
-                    // Otherwise build the rule ourselves
+                    // Field name second
+                    if (isset($parameters[1])) $uniqueRule[] = $parameters[1];
+                    else $uniqueRule[] = $field;
+
+                    // Make sure we ignore the current record
+                    if (isset($this->primaryKey))
+                    {
+                        $uniqueRule[] = (isset($parameters[2])) ? $parameters[2] : $this->{$this->primaryKey};
+                        $uniqueRule[] = (isset($parameters[3])) ? $parameters[3] : $this->primaryKey;
+                    }
                     else
                     {
-                        // Table name first
-                        if (count($parameters)) $uniqueRule[] = $parameters[0];
-                        else $uniqueRule[] = $this->getTable();
-
-                        // Field name second
-                        if (count($parameters) > 1) $uniqueRule[] = $parameters[1];
-                        else $uniqueRule[] = $field;
-
-                        // Ignore the current record
-                        if (isset($this->primaryKey))
-                        {
-                            $uniqueRule[] = $this->{$this->primaryKey};
-                            $uniqueRule[] = $this->primaryKey;
-                        }
-                        else $uniqueRule[] = $this->id;
+                        $uniqueRule[] = (isset($parameters[2])) ? $parameters[2] : $this->id;
+                        $uniqueRule[] = (isset($parameters[3])) ? $parameters[3] : 'id';
                     }
 
                     // If we have exactly 5 parameters then we use the where clause field to fill the exclusion
@@ -178,7 +172,11 @@ class Vocal extends Model
                 // Rebuild rule
                 $rule = $type;
 
-                if (count($parameters)) $rule .= ':' . implode(',', $parameters);
+                // Don't try and join parameters unless we have some
+                if ( ! $parameters) continue;
+
+                if (is_array($parameters) && count($parameters)) $rule .= ':' . implode(',', $parameters);
+                else $rule .= ':' . $parameters;
             }
         }
 
@@ -398,7 +396,7 @@ class Vocal extends Model
 
                     // If we have relationships, save them
                     $childRelationships = $record->getRelationships($data[$relationship]);
-                    if ($childRelationships) $errors += $record->saveChildren($data[$relationships], $childRelationships);
+                    if ($childRelationships) $errors += $record->saveChildren($data[$relationship], $childRelationships);
 
                     // We don't have any more records to process
                     break;
@@ -440,8 +438,11 @@ class Vocal extends Model
         if ($before) self::saving($before);
         if ($after) self::saved($after);
 
+        // Determine if we're working with a relationship
+        $relationship = ($this instanceof BelongsTo || $this instanceof BelongsToMany || $this instanceof HasMany || $this instanceof HasOne || $this instanceof MorphMany || $this instanceof MorphOne || $this instanceof MorphTo);
+
         // Validate record before save unless we're saving a relationship
-        $valid = $this->validate($rules, $messages, null, true);
+        $valid = $this->validate($rules, $messages, null, $relationship);
 
         // If record is invalid, save is unsuccessful
         if ( ! $valid) return false;
@@ -505,16 +506,16 @@ class Vocal extends Model
      * @param array $rules [= array()]
      * @param array $messages [= array()]
      * @param array $data [= array()]
-     * @param bool $presave [= false]
+     * @param bool $relationship [= false]
      * @return bool
      */
-    public function validate($rules = array(), $messages = array(), $data = array(), $presave = false)
+    public function validate($rules = array(), $messages = array(), $data = array(), $relationship = false)
     {
         // If we don't have any data passed, use input
         if ( ! count($data)) $data = Input::all();
 
         // Validate this record
-        return $this->validateRecord($rules, $messages, $data, $presave);
+        return $this->validateRecord($rules, $messages, $data, $relationship);
     }
 
     /**
@@ -602,10 +603,10 @@ class Vocal extends Model
      * @param array $rules
      * @param array $messages
      * @param array $data
-     * @param bool $presave [= false]
+     * @param bool $relationship [= false]
      * @return bool
      */
-    private function validateRecord($rules, $messages, $data, $presave = false)
+    private function validateRecord($rules, $messages, $data, $relationship = false)
     {
         // Fire validating event
         if ($this->fireModelEvent('validating') === false) return false;
@@ -626,8 +627,8 @@ class Vocal extends Model
         $messages = $this->loadCustomMessages($rules);
 
         // We're finally ready, fill record if we should
-        // but never fill if this is a presave validation as the record will already be set
-        if ($this->fillFromInput && ! $presave) $this->fill($data);
+        // but never fill if this is a relationship as the record will already be set
+        if ($this->fillFromInput && ! $relationship) $this->fill($data);
 
         // Determine what we're validating
         $data = $this->getAttributes();
