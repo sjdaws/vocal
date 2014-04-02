@@ -3,6 +3,7 @@
     "description": "Extended functionality for Eloquent in Laravel 4",
     "version": "0.1.0",
     "type": "library",
+    "license": "MIT",
     "keywords": ["lakedawson", "vocal", "laravel", "eloquent", "hydration", "validation"],
     "authors": [
         {
