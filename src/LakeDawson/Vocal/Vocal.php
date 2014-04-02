@@ -207,7 +207,7 @@ class Vocal extends Model
         $messages = array();
 
         // If we have no errors, abort
-        if ( ! $this->errors->count()) return $errors;
+        if ( ! $this->errors->count()) return $messages;
 
         foreach ($this->errors->toArray() as $key => $error)
         {
