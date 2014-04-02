@@ -1,0 +1,44 @@
+{
+    "name": "lakedawson/vocal",
+    "description": "Extended functionality for Eloquent in Laravel 4",
+    "version": "0.1.0",
+    "type": "library",
+    "keywords": ["lakedawson", "vocal", "laravel", "eloquent", "hydration", "validation"],
+    "authors": [
+        {
+            "name": "Scott Dawson",
+            "email": "scott@lakedawson.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.0",
+        "illuminate/database": "4.1.*",
+        "illuminate/support": "4.1.*"
+    },
+    "require-dev": {
+        "orchestra/testbench": "2.1.*"
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "git://github.com/orchestral/phpseclib.git"
+        }
+    ],
+    "support": {
+        "email": "support@lakedawson.com",
+        "issues": "https://github.com/lakedawson/vocal/issues",
+        "source": "https://github.com/lakedawson/vocal"
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "git://github.com/orchestral/phpseclib.git"
+        }
+    ],
+    "autoload": {
+        "psr-0": {
+            "LakeDawson\\Vocal": "src/"
+        }
+    },
+    "minimum-stability": "stable"
+}
