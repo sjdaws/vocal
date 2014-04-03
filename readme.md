@@ -4,7 +4,7 @@
 
 Extended functionality for Eloquent in Laravel 4.
 
-A big chunk of Vocal is based on the [Ardent](https://github.com/laravelbook/ardent) for Laravel 4 by Max Ehsan.
+A big chunk of Vocal is based on [Ardent](https://github.com/laravelbook/ardent) for Laravel 4 by Max Ehsan.
 
 Copyright (c) 2014 Lake Dawson Software <[https://lakedawson.com/](https://lakedawson.com/)>
 
@@ -31,13 +31,13 @@ Copyright (c) 2014 Lake Dawson Software <[https://lakedawson.com/](https://laked
 
 We primarily build large scale, multi tenant, single page applications based on [AngularJS](http://angularjs.org) and [Laravel 4](http://laravel.com). We are big on user experience and want to make sure our applications are simple to use and make sense.
 
-We often found that validating user input when dealing with nested relationships was a hassle, even with the brilliant [Ardent](https://github.com/laravelbook/ardent) by Max Ehsan. We can't validate one record at a time since the user could give up if they think they've resolved the only error on the page and are given another error for a nested relationship which was invalid from the start.
+We've always found that validating user input when dealing with nested relationships was a hassle, even with the brilliant [Ardent](https://github.com/laravelbook/ardent) by Max Ehsan. We want to minimise user frustration so we can't validate one record at a time since the user could give up if they think they've resolved the only error on the page and are given another error for a nested relationship that was invalid from the start.
 
 This led to large inflexible controllers. We had to validate each model, keep track of any errors and make sure the method failed for any error encountered. If we wanted to add another relationship to our model this would mean we also needed to change our store and update methods and hard code in the new relationship so it could be validated. What a drama.
 
 > **This is where Vocal comes in.**
 
-Vocal is a recursive, self-validating extension for Eloquent. It works much the same way as Ardent, but supports nested relationsips automatically. This will help you significantly reduce the amount of code you need to write leading to more free time so you can watch the [best cat videos](https://www.youtube.com/watch?v=cbP2N1BQdYc) on the internet.
+Vocal is a recursive, self-validating extension for Eloquent. It works much the same way as Ardent, but supports nested relationships automatically. This will help you significantly reduce the amount of code you need to write leading to more free time so you can watch the [best cat videos](https://www.youtube.com/watch?v=cbP2N1BQdYc) on the internet.
 
 
 <a name="install"></a>
@@ -69,7 +69,7 @@ use LakeDawson\Vocal\Vocal;
 class User extends Vocal {}
 ```
 
-Alternatively you could just create a single Base model which extends Vocal and make everything else extend your Base model. This makes it easier to switch between Vocal, Eloquent and Ardent and doesnt require a `use` statement inside each model.
+Alternatively you could just create a single Base model that extends Vocal and make everything else extend your Base model. This makes it easier to switch between Vocal, Eloquent and Ardent and doesn't require a `use` statement inside each model.
 
 ```php
 use LakeDawson\Vocal\Vocal;
@@ -87,11 +87,11 @@ class User extends Base {}
 <a name="recursion"></a>
 ## Recursive Operation
 
-One of the primary features of Vocal is recursive valdation and recursive saving via relationships. This makes it possible to validate and save entire record sets in one go.
+One of the primary features of Vocal is recursive validation and recursive saving via relationships. This makes it possible to validate and save entire record sets in one go.
 
 This means we can work on a single page without involving multiple controllers.
 
-For example, if we had a users on our site, and they had an address book each we may fetch the record for the address book page like so:
+For example, if we had an address book for each of our users on our site, and we want to give them an page so they can add/edit/delete addresses we would probably fetch the record(s) for the address book page like so:
 
 ```php
 public function get()
@@ -102,7 +102,7 @@ public function get()
 }
 ```
 
-But if a user wants to edit an address, we would traditionally need to do this all over again and involve a `UserAddressController` and `UserAddress` model:
+If a user wants to edit an address, we would traditionally need to do this all over again and involve a `UserAddressController` and `UserAddress` model:
 
 ```php
 public function get($id)
@@ -113,7 +113,7 @@ public function get($id)
 }
 ```
 
-Then when the user saves the address we would invoke the `update` function, which would validate the record, and either return the errors or save the record and send them back to the initial address book page. That seems like a lot of work. Wouldn't it be better to show one page, and allow them to change everything they want then save?
+Then when the user saves the address we would invoke the `update` function, which would validate the record, and either return the errors or save the record and send them back to the initial address book page. That seems like a lot of work. Wouldn't it be better to show one page, and allow them to change everything they want then save it all in one function?
 
 > **Enter Vocal**
 
@@ -121,7 +121,7 @@ In this example we use AngularJS. We can load the `$user` into  `$scope.user`, a
 
 When the user is finished we simply send the equivalent of the `$user` object back to the server and the magic happens.
 
-The first major advantage of this is you don't need to create a user before they can add addresses to their address book, it'll all be done in one go. This means you can ask the user for their address, or multiple addresses on a sign up page, and add it straight to their address book without having to work across multiple controllers or models.
+The first major advantage of this is you don't need to create a user before they can add addresses to their address book, it can all be done in one go. This means you can ask the user for their address, or multiple addresses on a sign up page, and add it straight to their address book without having to work across multiple controllers or models.
 
 The second advantage is we don't need separate `store` and `update` methods for `UserController` and then again for `UserAddressController`, as Vocal will handle all of this internally and detect whether it's working with an existing record or a whether it should create a new record automatically.
 
@@ -137,13 +137,13 @@ public function save()
 }
 ```
 
-This will validate and update the user and all their addresses in one swoop. If the validation was unsuccessful for the `$user` object, or any of the addresses we will have errors in our `$user` object and `$result` will be false. If everything was successfully validated and updated `Vocal->errors()` will return an empty array and `$result` will be true.
+This will validate and update the user and all their addresses in one swoop. If the validation was unsuccessful for the `$user` object, or any of the addresses, we will have all the <a href="#errors">errors stored our `$user` object</a> and `$result` will be false. If everything was successfully validated and updated `Vocal->errors()` will be empty and `$result` will be true.
 
 
 <a name="hydration"></a>
 ## Auto Hydration
 
-To save you from having to update your models manually each time the user saves something Vocal uses auto-hydration.
+To save you from having to update your models manually each time the user saves something, Vocal uses auto-hydration.
 
 Take this update function as an example:
 
@@ -207,13 +207,13 @@ $result = $user->save(); // <-- This will return false if model is invalid
 <a name="extended"></a>
 ## Extended Validation
 
-Some rules, such as Laravel's [unique rule](http://laravel.com/docs/validation#rule-unique) will fail if you attempt to update a record as it has a special parameter for excluding the current record, but since you've defined the rule at the model level the validator will assume you don't want to exclude any records.
+Some rules, such as Laravel's [unique rule](http://laravel.com/docs/validation#rule-unique) will fail if you attempt to update a record without updating the unique field, as it will see the field as not unique because it's already in the database. Laravel gets around this by allowing you to set a special parameter to ignore the current record, but since we define rules at a model level it's not easy to tell it automatically which record you want to exclude, which means we end up doing this at a controller level... which gives us even more redundant code. But never fear, Vocal will sort all this out for you.
 
 Vocal handles these situations for you automatically in two ways:
 
 #### Always skip current record
 
-If you define a rule as just `unique` without any parameters Vocal will automatically fill in the parameters for you. You don't even need to put the name of the table, which is the minimum requirement by default. Vocal will sort it out for you. This makes it super simple to keep records of the same kind unique within the table.
+If you define a rule as just `unique` without any parameters Vocal will automatically fill in the parameters for you. You don't even need to put the name of the table, which is the minimum requirement by default. This makes it super simple to keep records of the same kind unique within the table.
 
 For the following example, our primary key is id, but this can be overridden by setting the `primaryKey` variable on the model, and the id of the current record is 3:
 
@@ -231,7 +231,7 @@ class User extends Vocal
 
 You can also define variables at a model level. Variables are prefixed with a tilde (~), and matching attributes will be replaced.
 
-This makes unique where clauses easier to implement, if we want to keep name unique to everyone in a specific group we can use variables to achieve this. Any attribute on the current model can be used as a variable by specifying the attribute name.
+This makes unique where clauses easier to implement. For example if we want to keep name unique to everyone in a specific group, but duplicates are allowed in the table itself providing they're in different groups, we can set some variables on our rule to achieve this. Any attribute on the current model can be used as a variable by specifying the attribute name.
 
 For the following example, our primary key is id, the id of the current record is 3, and the group_id is 1:
 
@@ -258,9 +258,13 @@ class User extends Vocal
 
 When a Vocal model fails to validate, there are two ways to retrieve errors.
 
-Upon validation a nested `Illuminate\Support\MessageBag` object is attached to the Vocal object which contains validation failure messages.
+Upon validation a nested `Illuminate\Support\MessageBag` object is attached to the Vocal object that contains validation failure messages.
 
-Errors can be retrieved as an array using the `Vocal->errors()` method. This is best when using `Vocal->saveRecursive()` or `Vocal->validateRecursive()` as `MessageBag` plays up with nested errors.
+If you are saving or validating a single record and want to retrieve errors directly from `MessageBag`, you can use `Vocal->errorBag()`. This works in the same way normal validation errors do, you can use `Vocal->errorBag()->all()` to get all messages and `Vocal->errorBag()->get('attribute')` to retrieve errors just for a single attribute.
+
+> **Note:** Using the `MessageBag` with nested errors returned from recursive validation can cause irratic behaviour. Calling `Vocal->errorBag()->all()` will return an empty set if a record validates successfully but has a nested relationship with an error.
+
+Errors can be retrieved as an array using the `Vocal->errors()` method. This is the recommended method when using `Vocal->saveRecursive()` or `Vocal->validateRecursive()`.
 
 For example let's say our input looks like this:
 
@@ -327,19 +331,21 @@ Array
 )
 ```
 
-If you are saving or validating a single record and want to retrieve errors directly from `MessageBag`, you can use `Vocal->errorBag()`. This works in the same way normal validation errors do, you can use `Vocal->errorBag()->all()` to get all messages and `Vocal->errorBag()->get('attribute')` to retrieve errors just for a single attribute.
-
-> **Note:** Using the `MessageBag` with nested errors can cause irratic behaviour. Calling `Vocal->errorBag()->all()` will return an empty set if a record validates successfully but has a relationship with an error.
-
 
 <a name="i8n"></a>
 ## i8n Custom Validation Messages
 
-Currently if you want to define [custom error messages](http://laravel.com/docs/validation#custom-error-messages) for a model, you must define them within the model itself, or pass them from the controller. This is not very i8n friendly unless you define all your custom messages using `Lang::get()` from the controller prior to running the validation or use a custom constructor in your model to handle it. This is a real hassle especially if you have to duplicating code in your `store` and `update` methods, or have to copy and paste a custom constructor to each model.
+Currently if you want to define [custom error messages](http://laravel.com/docs/validation#custom-error-messages) for a model, you must change the default language file or pass them from the controller. Ardent improves on this by allowing you to define them within the model itself.
+
+All of these solutions have a flaw:
+
+* Changing the default language file means your error messages need to be generic, this is especially bad for regex errors
+* Passing error messages from the controller means you need to use `Lang::get()` and define all your error messages over and over again, which is more redundant code especially if you have the same validator for `save` and `update` methods
+* The Ardent method is an improvement but is not i8n friendly. You're stuck with error messages for a single language
 
 Vocal handles i8n custom messages for you. Simply create a folder called 'validation' in your `lang/locale` directory and add language files with the same name as the model. Vocal will automatically search for a validation language file prior to validating. If no matching language file is found there will be a fallback to the default validation file.
 
-For example, if we have a user, we might want a better error message for why we need a valid email address, you would have these rules:
+For example, if we have a user, we might want a better error message for why we need a valid email address. Our model would have these rules:
 
 ```php
 class User extends Vocal
@@ -350,7 +356,7 @@ class User extends Vocal
 }
 ```
 
-For english, we would then have a file saved in `lang/en/validation/User.php` with the following:
+For English, we would then have a file saved in `lang/en/validation/User.php` with the following:
 
 ```php
 return array(
@@ -371,7 +377,7 @@ You can override Vocal validation (and custom error messages) for a single call 
 
 All functions take two parameters:
 
-- First parameters is `$rules`. This must be an array of Validator rules in the same form as they would be [defined in the model](#simple)
+- First parameter is `$rules`. This must be an array of Validator rules in the same form as they would be [defined in the model](#simple)
 - Second parameter is `$messages`. This must be an array of [custom validation messages](http://laravel.com/docs/validation#custom-error-messages)
 
 An array that is **not empty** will override the rules or custom error messages specified by the class for that instance of the method only.
@@ -406,7 +412,7 @@ public function afterCreate()
 }
 ```
 
-The above example is especially useful for situations where users may be able to register themselves, but you also have an admin panel where you can add users manually. Instead of putting the code in each controller, you can place it in the model and it will be fired for each registration.
+The above example is especially useful for situations where users may be able to register themselves, but you also have an administration panel where you can add users manually. Instead of putting the code in each controller, you can place it in the model and it will be fired for each registration.
 
 #### Additional beforeSave and afterSave
 
