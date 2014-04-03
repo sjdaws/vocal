@@ -384,6 +384,20 @@ class Vocal extends Model
     }
 
     /**
+     * Remove any fields which can't be submitted to the database
+     *
+     * @param array $data
+     * @param return void
+     */
+    public function removeInvalidAttributes()
+    {
+        foreach ($this->getAttributes() as $attribute => $data)
+        {
+            if ( ! is_null($data) && ! is_scalar($data)) unset($this->$attribute);
+        }
+    }
+
+    /**
      * Save a single record
      *
      * @param array $rules
@@ -569,6 +583,10 @@ class Vocal extends Model
         // Build any rules using ~fields and exclude current record for unique
         $rules = $this->buildValidationRules($rules);
 
+        // Remove any fields from the model which can't be submitted, such as objects and arrays
+        // - This will prevent errors with bound objects being saved twice
+        $this->removeInvalidAttributes();
+
         // If we have no rules, we're good to go!
         if ( ! count($rules)) return true;
 
@@ -576,11 +594,7 @@ class Vocal extends Model
         if ( ! count($messages)) $messages = $this->loadCustomMessages($rules);
 
         // We're finally ready, fill record with data if we need to
-        if ($this->fillFromInput)
-        { 
-            if ( ! $data) $data = Input::all();
-            $this->fill($data);
-        }
+        if ($this->fillFromInput) $this->fill($data);
 
         // Determine what we're validating
         $model = $this->getAttributes();

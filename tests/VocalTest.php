@@ -103,29 +103,18 @@ class TestCase extends \Orchestra\Testbench\TestCase
         ));
 
         $test = new Test;
-        $result = $test->validateRecursive();
+        $result = $test->saveRecursive();
 
         // Make sure validation passed
-        $this->assertTrue($result, $this->errorResponse('Validation should have passed', $test));
-
-        // Save and test result
-        $result = $test->saveRecursive();
         $this->assertTrue($result, $this->errorResponse('Record was not saved', $test));
 
-        // Get all records
-        $record = Test::with('children')->find(1);
-
-        // Check record was retrieved and matches input
-        $this->assertTrue($record->id == 1, $this->errorResponse('Record could not be fetched', $record));
-        $this->assertTrue($record->description == 'Parent', $this->errorResponse('Record was not saved correctly', $record));
-
         // Check child records
-        foreach ($record->children as $child)
+        foreach ($test->children as $child)
         {
             $this->assertTrue(strpos($child->description, 'Child') === 0, $this->errorResponse('Child record was not saved correctly', $child));
         }
 
-        // Update second child record and save again
+        // Update second relationship and save again
         $input->replace(array(
             'id'          => 1,
             'description' => 'Parent',
@@ -135,15 +124,12 @@ class TestCase extends \Orchestra\Testbench\TestCase
             )
         ));
 
-        $result = $record->saveRecursive();
+        $result = $test->saveRecursive();
 
         // Check save was successful
-        $this->assertTrue($result, $this->errorResponse('Record was not updated', $record));
-
-        // Get all records
-        $record = Test::with('children')->find(1);
+        $this->assertTrue($result, $this->errorResponse('Record was not updated', $test));
 
         // Make sure child was updated
-        $this->assertTrue($record->children[1]->description == 'Child X', $this->errorResponse('Child record was not updated correctly', $record->children[1]));
+        $this->assertTrue($test->children[1]->description == 'Child X', $this->errorResponse('Child record was not updated correctly', $test->children[1]));
     }
 }
