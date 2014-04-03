@@ -1,5 +1,7 @@
 #Vocal
 
+[![Build Status](https://travis-ci.org/lakedawson/vocal.png)](https://travis-ci.org/lakedawson/vocal) [![License](https://poser.pugx.org/lakedawson/vocal/license.png)](https://packagist.org/packages/lakedawson/vocal) [![Latest Stable Version](https://poser.pugx.org/lakedawson/vocal/version.png)](https://packagist.org/packages/lakedawson/vocal)
+
 Extended functionality for Eloquent in Laravel 4.
 
 A big chunk of Vocal is based on the [Ardent](https://github.com/laravelbook/ardent) for Laravel 4 by Max Ehsan.
@@ -454,3 +456,7 @@ Vocal will automatically replace the plain-text attribute with secure hash check
 Sometimes you just want to create a random sentence from dictionary words.
 
 Vocal contains a built in dictionary of 1949 English words and can help you by creating a random sentence via the `Vocal->randomSentence($length)` method, where `$length` is the number of words to randomly select and put into a sentence.
+
+```php
+User::randomSentence(3); // Returns something like 'Human Bridge Indicate'
+```
