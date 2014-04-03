@@ -135,7 +135,7 @@ public function save()
 }
 ```
 
-This will validate and update the user and all their addresses in one swoop. If the validation was unsuccessful for the `$user` object, or any of the addresses we will have errors in our `$user` object and `$result` will be false. If everything was successfully validated and updated `errors()` will return an empty array.
+This will validate and update the user and all their addresses in one swoop. If the validation was unsuccessful for the `$user` object, or any of the addresses we will have errors in our `$user` object and `$result` will be false. If everything was successfully validated and updated `Vocal->errors()` will return an empty array and `$result` will be true.
 
 
 <a name="hydration"></a>
