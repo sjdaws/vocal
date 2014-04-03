@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
@@ -20,6 +21,13 @@ use Illuminate\Support\MessageBag;
 
 class Vocal extends Model
 {
+    /**
+     * The dataset we're currently validating
+     *
+     * @var array
+     */
+    private $data;
+
     /**
      * The message bag instance containing validation error messages
      *
@@ -47,7 +55,6 @@ class Vocal extends Model
      * @var array
      */
     protected $rules = array();
-
 
     /**
      * Create a new model instance
@@ -91,6 +98,31 @@ class Vocal extends Model
                 }
             }
         }
+    }
+
+    /**
+     * Create a relationship record for saving
+     *
+     * @param string $relationship
+     * @param array $data
+     * @param array 
+     */
+    private function buildRelationRecord($relationship, $data)
+    {
+        // Set up model
+        $model = $this->$relationship()->getModel();
+
+        // Determine which key we will use to find an existing record
+        $key = (isset($model->primaryKey)) ? $model->primaryKey : 'id';
+
+        // Find or create record
+        $record = (isset($data[$key])) ? $model->find($data[$key]) : new $model;
+                    
+        // Save record
+        $record->fill($data);
+
+        // Attach to parent
+        return $record;
     }
 
     /**
@@ -267,7 +299,7 @@ class Vocal extends Model
      *
      * @return array
      */
-    public function getRelationships($data = array())
+    private function getRelationships($data = array())
     {
         // If we don't have data, use input
         if ( ! count($data)) $data = Input::all();
@@ -288,19 +320,36 @@ class Vocal extends Model
             {
                 // If the function is a relationship instance, assume it's legit
                 if (
-                        $this->{$model}() instanceof BelongsTo ||
-                        $this->{$model}() instanceof BelongsToMany ||
-                        $this->{$model}() instanceof HasMany ||
-                        $this->{$model}() instanceof HasOne ||
-                        $this->{$model}() instanceof MorphMany ||
-                        $this->{$model}() instanceof MorphOne ||
-                        $this->{$model}() instanceof MorphTo
+                        $this->$model() instanceof BelongsTo ||
+                        $this->$model() instanceof BelongsToMany ||
+                        $this->$model() instanceof HasMany ||
+                        $this->$model() instanceof HasManyThrough ||
+                        $this->$model() instanceof HasOne ||
+                        $this->$model() instanceof MorphMany ||
+                        $this->$model() instanceof MorphOne ||
+                        $this->$model() instanceof MorphTo
                     )
-                    $relationships[] = $model;
+                    $relationships[$model] = $this->getRelationshipType($this->$model());
             }
         }
 
         return $relationships;
+    }
+
+    /**
+     * Determine what type of relationship we're working with
+     *
+     * @param object $model
+     * @return string
+     */
+    private function getRelationshipType($model)
+    {
+        return (
+            $model instanceof BelongsTo ||
+            $model instanceof HasOne ||
+            $model instanceof MorphOne ||
+            $model instanceof MorphTo
+        ) ? 'one' : 'many';
     }
 
     /**
@@ -360,76 +409,16 @@ class Vocal extends Model
     }
 
     /**
-     * Save child records by relationship
-     *
-     * @param array $data
-     * @param array $relationships
-     * @return int
-     */
-    private function saveChildren($data, $relationships)
-    {
-        // Keep track of anything that fails to save
-        $errors = 0;
-
-        // Validate relationships
-        foreach ($relationships as $relationship)
-        {
-            $relationshipErrors = new MessageBag;
-
-            // Set up model
-            $class = $this->$relationship()->getModel();
-
-            // Determine which key we will use to find an existing record
-            $key = (isset($class->primaryKey)) ? $class->primaryKey : 'id';
-
-            foreach ($data[$relationship] as $index => $childData)
-            {
-                // If the child isn't an array, then it's a single record
-                if ( ! is_array($childData))
-                {
-                    $record = (isset($data[$relationship][$key])) ? $class->find($data[$relationship][$key]) : new $class;
-                    if ($record->fillFromInput) $record->fill($data[$relationship]);
-
-                    $result = ($record->exists) ? $record->save() : $this->$relationship()->save($record);
-
-                    if ( ! $result) ++$errors;
-
-                    // If we have relationships, save them
-                    $childRelationships = $record->getRelationships($data[$relationship]);
-                    if ($childRelationships) $errors += $record->saveChildren($data[$relationship], $childRelationships);
-
-                    // We don't have any more records to process
-                    break;
-                }
-
-                $record = (isset($childData[$key])) ? $class->find($childData[$key]) : new $class;
-                if ($record->fillFromInput) $record->fill($childData);
-
-                $result = ($record->exists) ? $record->save() : $this->$relationship()->save($record);
-
-                // If we have relationships, save them
-                $childRelationships = $record->getRelationships($childData);
-                if ($childRelationships) $errors += $record->saveChildren($childData, $childRelationships);
-
-                // Add errors to parent if we have some
-                if ( ! $result) ++$errors;
-            }
-        }
-
-        return $errors;
-    }
-
-    /**
      * Save a single record
      *
      * @param array $rules
      * @param array $messages
-     * @param array $options
+     * @param array $data
      * @param Closure $beforeSave
      * @param Closure $afterSave
      * @return bool
      */
-    public function save(array $rules = array(), array $messages = array(), array $options = array(), Closure $before = null, Closure $after = null)
+    public function save(array $rules = array(), $messages = array(), $data = array(), Closure $before = null, Closure $after = null)
     {
         // Boot model to enable hooks
         self::boot();
@@ -438,11 +427,8 @@ class Vocal extends Model
         if ($before) self::saving($before);
         if ($after) self::saved($after);
 
-        // Determine if we're working with a relationship
-        $relationship = ($this instanceof BelongsTo || $this instanceof BelongsToMany || $this instanceof HasMany || $this instanceof HasOne || $this instanceof MorphMany || $this instanceof MorphOne || $this instanceof MorphTo);
-
         // Validate record before save unless we're saving a relationship
-        $valid = $this->validate($rules, $messages, null, $relationship);
+        $valid = $this->validate($rules, $messages, $data);
 
         // If record is invalid, save is unsuccessful
         if ( ! $valid) return false;
@@ -458,32 +444,25 @@ class Vocal extends Model
                 }
             }
         }
-
-        return parent::save($options);
+        
+        return parent::save();
     }
 
     /**
-     * Recursively save a record set
+     * Recursively save a record
      *
-     * @param $rules [= array()]
-     * @param $messages [= array()]
-     * @param $data [= array()]
-     * @return bool
+     * @param array $rules
+     * @param array $messages
+     * @param array $data
+     * @return int
      */
     public function saveRecursive($rules = array(), $messages = array(), $data = array())
     {
         // If we don't have any data passed, use input
         if ( ! count($data)) $data = Input::all();
 
-        // Validate recordset
-        $result = $this->validateRecursive($rules, $messages);
-
-        if ( ! $result) return false;
-
         // Save this record
-        if ($this->fillFromInput) $this->fill($data);
-
-        $result = $this->save();
+        $result = $this->save($rules, $messages, $data);
 
         if ( ! $result) return false;
 
@@ -493,86 +472,157 @@ class Vocal extends Model
         // If we don't have any relationships or save failed, return errors
         if ( ! count($relationships) || ! $result) return $result;
 
-        // Save children
-        $errors = $this->saveChildren($data, $relationships);
+        // Save relationships
+        $result = $this->saveRelations($rules, $messages, $relationships, $data);
 
-        // Sucess depends on whether we have errors or not
-        return ($errors == 0);
+        return $result;
     }
 
     /**
-     * Resursively validate a recordset
-     *
-     * @param array $rules [= array()]
-     * @param array $messages [= array()]
-     * @param array $data [= array()]
-     * @param bool $relationship [= false]
-     * @return bool
-     */
-    public function validate($rules = array(), $messages = array(), $data = array(), $relationship = false)
-    {
-        // If we don't have any data passed, use input
-        if ( ! count($data)) $data = Input::all();
-
-        // Validate this record
-        return $this->validateRecord($rules, $messages, $data, $relationship);
-    }
-
-    /**
-     * Validate child records
+     * Recursively save records by relationship
      *
      * @param array $rules
      * @param array $messages
      * @param array $data
      * @param array $relationships
-     * @return Illuminate\Support\MessageBag
+     * @return bool
      */
-    private function validateChildren($rules, $messages, $data, $relationships)
+    private function saveRelations($rules, $messages, $relationships, $data)
     {
-        // Capture validation errors
-        $errors = new MessageBag;
-
-        // Validate relationships
-        foreach ($relationships as $relationship)
+        // Process each relationships
+        foreach ($relationships as $relationship => $type)
         {
-            $relationshipErrors = new MessageBag;
+            // Capture any errors from relationships
+            $relationErrors = new MessageBag;
 
-            // Set up model
-            $class = $this->$relationship()->getModel();
+            // Get class/model we're working on
+            $model = $this->$relationship()->getModel();
 
             // Determine which key we will use to find an existing record
-            $key = (isset($class->primaryKey)) ? $class->primaryKey : 'id';
+            $key = (isset($model->primaryKey)) ? $model->primaryKey : 'id';
 
-            // Extract rules and messages if we have them
-            $childRules = (isset($rules[$relationship])) ? $rules[$relationship] : array();
-            $childMessages = (isset($messages[$relationship])) ? $messages[$relationship] : array();
+            // Get rules and messages we will use
+            $relationRules = (isset($rules[$relationship])) ? $rules[$relationship] : array();
+            $relationMessages = (isset($messages[$relationship])) ? $messages[$relationship] : array();
 
-            foreach ($data[$relationship] as $index => $childData)
+            if ($type == 'one')
             {
-                // If the child isn't an array, then it's a single record
-                if ( ! is_array($childData))
+                // Find or create record
+                $record = (isset($data[$relationship][$key])) ? $model->find($data[$relationship][$key]) : new $model;
+
+                // Validate
+                $result = $record->validate($relationRules, $relationMessages, $data[$relationship]);
+
+                // Save record on success, log errors on fail
+                if ($result) $result = (method_exists($this->$relationship(), 'associate')) ? $this->$relationship()->associate($record) : $this->$relationship()->save($record);
+                else $relationErrors->merge($record->errors);
+            }
+            else
+            {
+                $records = array();
+                
+                foreach ($data[$relationship] as $index => $relationData)
                 {
-                    $record = (isset($data[$relationship][$key])) ? $class->find($data[$relationship][$key]) : new $class;
-                    $result = $record->validateRecursive($childRules, $childMessages, $data[$relationship]);
+                    // Find or create record
+                    $record = (isset($relationData[$key])) ? $model->find($relationData[$key]) : new $model;
 
-                    if ( ! $result) $relationshipErrors->merge($record->errors);
+                    // Validate
+                    $result = $record->validate($relationRules, $relationMessages, $relationData);
 
-                    // We don't have any more records to process
-                    break;
+                    // Capture record on success, log errors on fail
+                    if ($result) $records[] = $record;
+                    else $relationErrors->add($index, $record->errors);
                 }
 
-                $record = (isset($childData[$key])) ? $class->find($childData[$key]) : new $class;
-                $result = $record->validateRecursive($childRules, $childMessages, $childData);
+                // Save all the records we can
+                $result = $this->$relationship()->saveMany($records);
 
-                // Add errors to parent if we have some
-                if ( ! $result) $relationshipErrors->add($index, $record->errors);
+                // If save was successful, attach to parent
+                if ($result)
+                {
+                    // Check and save any relationships
+                    foreach ($data[$relationship] as $index => $relationData)
+                    { 
+                        // If record wasn't saved, skip
+                        if ( ! isset($result[$index])) continue;
+
+                        $relationRelationships = $result[$index]->getRelationships($relationData);
+                        
+                        if (count($relationRelationships))
+                        {
+                            $relationshipResult = $result[$index]->saveRelations($relationRules, $relationMessages, $relationRelationships, $relationData);
+
+                            if ( ! $relationshipResult) $relationErrors->add($index, $result[$index]->errors);
+                        }
+                    }
+                }
             }
 
-            // If we had any errors from the model, add them to parent
-            if ($relationshipErrors->count()) $errors->add($relationship, $relationshipErrors);
+            // Attach relationships to parent
+            if ($result) $this->$relationship = $result;
+
+            // Merge in any errors we have
+            if ($relationErrors->count()) $this->errors->add($relationship, $relationErrors);
         }
 
-        return $errors;
+        return ($this->errors->count() == 0);
+    }
+
+    /**
+     * Validate a single record
+     *
+     * @param array $rules [= array()]
+     * @param array $messages [= array()]
+     * @param array $data [= array()]
+     */
+    public function validate($rules = array(), $messages = array(), $data = array())
+    {
+        // Fire validating event
+        if ($this->fireModelEvent('validating') === false) return false;
+
+        // If we have rules, use them, otherwise use rules from model
+        $rules = ( ! count($rules)) ? $this->rules : $rules;
+
+        // Remove any empty rules
+        foreach ($rules as $field => $rule) if ( ! $rule) unset($rules[$field]);
+
+        // Build any rules using ~fields and exclude current record for unique
+        $rules = $this->buildValidationRules($rules);
+
+        // If we have no rules, we're good to go!
+        if ( ! count($rules)) return true;
+
+        // Load custom validation messages if we don't have any passed
+        if ( ! count($messages)) $messages = $this->loadCustomMessages($rules);
+
+        // We're finally ready, fill record with data if we need to
+        if ($this->fillFromInput)
+        { 
+            if ( ! $data) $filler = Input::all();
+            $this->fill($data);
+        }
+
+        // Determine what we're validating
+        $model = $this->getAttributes();
+
+        // Validate
+        $validator = Validator::make($model, $rules, $messages);
+        $result = $validator->passes();
+
+        // If model is valid, remove old errors
+        if ($result) $this->errors = new MessageBag;
+        else
+        {
+            // Add errors messages
+            $this->errors = $validator->messages();
+
+            // Stash the input to the current session
+            if (Input::hasSession()) Input::flash();
+        }
+
+        $this->fireModelEvent('validated', false);
+
+        return $result;
     }
 
     /**
@@ -598,68 +648,9 @@ class Vocal extends Model
     }
 
     /**
-     * Validate a single record
+     * Recursively validate a recordset
      *
      * @param array $rules
-     * @param array $messages
-     * @param array $data
-     * @param bool $relationship [= false]
-     * @return bool
-     */
-    private function validateRecord($rules, $messages, $data, $relationship = false)
-    {
-        // Fire validating event
-        if ($this->fireModelEvent('validating') === false) return false;
-
-        // If we have rules, use them, otherwise use rules from model
-        $rules = ( ! count($rules)) ? $this->rules : $rules;
-
-        // Remove any empty rules
-        foreach ($rules as $field => $rule) if ( ! $rule) unset($rules[$field]);
-
-        // Build any rules using ~fields and exclude current record for unique
-        $rules = $this->buildValidationRules($rules);
-
-        // If we have no rules, we're good to go!
-        if ( ! count($rules)) return true;
-
-        // Load custom validation messages
-        $messages = $this->loadCustomMessages($rules);
-
-        // We're finally ready, fill record if we should
-        // but never fill if this is a relationship as the record will already be set
-        if ($this->fillFromInput && ! $relationship) $this->fill($data);
-
-        // Determine what we're validating
-        $data = $this->getAttributes();
-
-        // Validate
-        $validator = Validator::make($data, $rules, $messages);
-        $result = $validator->passes();
-
-        // If model is valid, remove old errors
-        if ($result) $this->errors = new MessageBag;
-        else
-        {
-            // Add errors messages
-            $this->errors = $validator->messages();
-
-            // Stash the input to the current session
-            if (Input::hasSession()) Input::flash();
-        }
-
-        $this->fireModelEvent('validated', false);
-
-        return $result;
-    }
-
-    /**
-     * Resursively validate a recordset
-     *
-     * @param array $rules [= array()]
-     * @param array $messages [= array()]
-     * @param array $data [= array()]
-     * @return bool
      */
     public function validateRecursive($rules = array(), $messages = array(), $data = array())
     {
@@ -667,7 +658,7 @@ class Vocal extends Model
         if ( ! count($data)) $data = Input::all();
 
         // Validate this record
-        $this->validateRecord($rules, $messages, $data);
+        $this->validate($rules, $messages, $data);
 
         // See if we have any relationships to validate
         $relationships = $this->getRelationships($data);
@@ -675,13 +666,77 @@ class Vocal extends Model
         // If we don't have any relationships, return errors if we have them
         if ( ! count($relationships)) return ($this->errors->count() == 0);
 
-        // Validate children
-        $errors = $this->validateChildren($rules, $messages, $data, $relationships);
+        // Validate relationships
+        $result = $this->validateRelations($rules, $messages, $relationships, $data);
 
-        // Merge in any validation errors
-        if ($errors->count()) $this->errors->merge($errors);
+        return $result;
+    }
 
-        // Sucess depends on whether we have errors or not
+    /**
+     * Recursively save records by relationship
+     *
+     * @param array $rules
+     * @param array $messages
+     * @param array $data
+     * @param array $relationships
+     * @return bool
+     */
+    private function validateRelations($rules, $messages, $relationships, $data)
+    {
+        // Process each relationships
+        foreach ($relationships as $relationship => $type)
+        {
+            // Capture any errors from relationships
+            $relationErrors = new MessageBag;
+
+            // Get class/model we're working on
+            $model = $this->$relationship()->getModel();
+
+            // Determine which key we will use to find an existing record
+            $key = (isset($model->primaryKey)) ? $model->primaryKey : 'id';
+
+            // Get rules and messages we will use
+            $relationRules = (isset($rules[$relationship])) ? $rules[$relationship] : array();
+            $relationMessages = (isset($messages[$relationship])) ? $messages[$relationship] : array();
+
+            if ($type == 'one')
+            {
+                // Find or create record
+                $record = (isset($data[$relationship][$key])) ? $model->find($data[$relationship][$key]) : new $model;
+
+                // Validate and capture errors
+                $result = $record->validate($relationRules, $relationMessages, $data[$relationship]);
+                if ( ! $result) $relationErrors->merge($record->errors);
+            }
+            else
+            {
+                $records = array();
+                
+                foreach ($data[$relationship] as $index => $relationData)
+                {
+                    // Find or create record
+                    $record = (isset($relationData[$key])) ? $model->find($relationData[$key]) : new $model;
+
+                    // Validate and capture errors
+                    $result = $record->validate($relationRules, $relationMessages, $relationData);
+                    if ( ! $result) $relationErrors->add($index, $record->errors);
+
+                    // Validate children if we have some
+                    $relationRelationships = $record->getRelationships($relationData);
+
+                    if (count($relationRelationships))
+                    {
+                        $relationshipResult = $record->validateRelations($relationRules, $relationMessages, $relationRelationships, $relationData);
+
+                        if ( ! $relationshipResult) $relationErrors->add($index, $record->errors);
+                    }
+                }    
+            }
+
+            // Merge in any errors we have
+            if ($relationErrors->count()) $this->errors->add($relationship, $relationErrors);
+        }
+
         return ($this->errors->count() == 0);
     }
 }

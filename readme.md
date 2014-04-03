@@ -131,13 +131,11 @@ public function save()
     $user = User::find(Input::get('id')) ?: new User;
     $result = $user->saveRecursive();
 
-    return ( ! $result) ? $user : User::with('addresses')->find($user->id);
+    return $user;
 }
 ```
 
-This will validate and update the user and all their addresses in one swoop. If the validation was unsuccessful for the `$user` object, or any of the addresses we will have errors in our `$user` object and `$result` will be false. If everything was successfully validated and updated we just need to re-fetch the record and send the updated data back.
-
-> **Note:** We are working on updating the `$user` object after saving relationships so a re-fetch isn't required. However at the moment only the initial object (`User` in this example) is updated and all relationships stay do not update on save which makes a re-fetch mandatory if you're not redirecting the user.
+This will validate and update the user and all their addresses in one swoop. If the validation was unsuccessful for the `$user` object, or any of the addresses we will have errors in our `$user` object and `$result` will be false. If everything was successfully validated and updated `errors()` will return an empty array.
 
 
 <a name="hydration"></a>
