@@ -101,31 +101,6 @@ class Vocal extends Model
     }
 
     /**
-     * Create a relationship record for saving
-     *
-     * @param string $relationship
-     * @param array $data
-     * @param array 
-     */
-    private function buildRelationRecord($relationship, $data)
-    {
-        // Set up model
-        $model = $this->$relationship()->getModel();
-
-        // Determine which key we will use to find an existing record
-        $key = (isset($model->primaryKey)) ? $model->primaryKey : 'id';
-
-        // Find or create record
-        $record = (isset($data[$key])) ? $model->find($data[$key]) : new $model;
-                    
-        // Save record
-        $record->fill($data);
-
-        // Attach to parent
-        return $record;
-    }
-
-    /**
      * Build validation rules
      * - This function replaces ~attributes with their values
      * - ~table will be replaced with the table name and ~field will be replaced with the field name
@@ -598,7 +573,7 @@ class Vocal extends Model
         // We're finally ready, fill record with data if we need to
         if ($this->fillFromInput)
         { 
-            if ( ! $data) $filler = Input::all();
+            if ( ! $data) $data = Input::all();
             $this->fill($data);
         }
 
