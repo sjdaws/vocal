@@ -436,6 +436,11 @@ class Vocal extends Model
         // If we don't have any data passed, use input
         if ( ! count($data)) $data = Input::all();
 
+        // Validate first
+        $result = $this->validateRecursive($rules, $messages, $data);
+
+        if ( ! $result) return false;
+
         // Save this record
         $result = $this->save($rules, $messages, $data);
 
