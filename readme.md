@@ -139,6 +139,8 @@ public function save()
 
 This will validate and update the user and all their addresses in one swoop. If the validation was unsuccessful for the `$user` object, or any of the addresses, we will have all the <a href="#errors">errors stored our `$user` object</a> and `$result` will be false. If everything was successfully validated and updated `Vocal->errors()` will be empty and `$result` will be true.
 
+This recursive action is not limited to AngularJS and can also be achieved with normal html forms. There is [an example](https://github.com/lakedawson/vocal/tree/master/examples/without-angular) on how to do this in the [examples directory](https://github.com/lakedawson/vocal/tree/master/examples).
+
 
 <a name="hydration"></a>
 ## Auto Hydration
