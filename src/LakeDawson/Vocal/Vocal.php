@@ -422,6 +422,14 @@ class Vocal extends Model
         // If record is invalid, save is unsuccessful
         if ( ! $valid) return false;
 
+        foreach ($data as $key => $value)
+        {
+            if (isset($this->attributes[$key]))
+            {
+                $this->attributes[$key] = $value;
+            }
+        }
+
         // Hash attributes
         if (count($this->hashAttributes))
         {
