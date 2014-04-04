@@ -38,6 +38,6 @@ Deleting an address will require some modification to the save function to remov
 ```php
 foreach ($user->addresses as $address)
 {
-    if ( ! isset(Input::get('addresses.' . $address->id))) $address->delete();
+    if ( ! Input::has('addresses.' . $address->id)) $address->delete();
 }
 ```
