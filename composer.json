@@ -4,7 +4,7 @@
     "version": "0.1.4",
     "type": "library",
     "license": "MIT",
-    "keywords": ["laravel", "vocal", "eloquent", "hydration", "validation", "orm", "activerecord"],
+    "keywords": ["laravel", "eloquent", "orm", "activerecord", "recursive", "hydration", "validation", "angular", "angularjs"],
     "authors": [
         {
             "name": "Scott Dawson",
