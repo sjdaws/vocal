@@ -433,7 +433,7 @@ class Vocal extends Model
                 }
             }
         }
-        
+
         return parent::save();
     }
 
@@ -447,9 +447,6 @@ class Vocal extends Model
      */
     public function saveRecursive($rules = array(), $messages = array(), $data = array())
     {
-        // If we don't have any data passed, use input
-        if ( ! count($data)) $data = Input::all();
-
         // Validate first
         $result = $this->validateRecursive($rules, $messages, $data);
 
@@ -514,7 +511,7 @@ class Vocal extends Model
             else
             {
                 $records = array();
-                
+
                 foreach ($data[$relationship] as $index => $relationData)
                 {
                     // Find or create record
@@ -536,12 +533,12 @@ class Vocal extends Model
                 {
                     // Check and save any relationships
                     foreach ($data[$relationship] as $index => $relationData)
-                    { 
+                    {
                         // If record wasn't saved, skip
                         if ( ! isset($result[$index])) continue;
 
                         $relationRelationships = $result[$index]->getRelationships($relationData);
-                        
+
                         if (count($relationRelationships))
                         {
                             $relationshipResult = $result[$index]->saveRelations($relationRules, $relationMessages, $relationRelationships, $relationData);
@@ -573,6 +570,9 @@ class Vocal extends Model
     {
         // Fire validating event
         if ($this->fireModelEvent('validating') === false) return false;
+
+        // If we don't have any data passed, use input
+        if ( ! count($data)) $data = Input::all();
 
         // If we have rules, use them, otherwise use rules from model
         $rules = ( ! count($rules)) ? $this->rules : $rules;
@@ -705,7 +705,7 @@ class Vocal extends Model
             else
             {
                 $records = array();
-                
+
                 foreach ($data[$relationship] as $index => $relationData)
                 {
                     // Find or create record
@@ -724,7 +724,7 @@ class Vocal extends Model
 
                         if ( ! $relationshipResult) $relationErrors->add($index, $record->errors);
                     }
-                }    
+                }
             }
 
             // Merge in any errors we have
