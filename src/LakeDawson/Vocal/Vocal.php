@@ -272,13 +272,11 @@ class Vocal extends Model
     /**
      * Check whether passed data contains a relationship or not
      *
+     * @param array $data
      * @return array
      */
-    private function getRelationships($data = array())
+    private function getRelationships($data)
     {
-        // If we don't have data, use input
-        if ( ! count($data)) $data = Input::all();
-
         $relationships = array();
 
         // Loop through input, and check whether any key is a valid relationship
@@ -325,6 +323,18 @@ class Vocal extends Model
             $model instanceof MorphOne ||
             $model instanceof MorphTo
         ) ? 'one' : 'many';
+    }
+
+    /**
+     * Fill a record and set a flag to save it's been filled
+     *
+     * @param array $data
+     * @return void
+     */
+    public function hydrate($data)
+    {
+        $this->fill($data);
+        $this->_hydratedByVocal = true;
     }
 
     /**
@@ -434,6 +444,9 @@ class Vocal extends Model
             }
         }
 
+        // Remove fill indicator if set
+        if ($this->_hydratedByVocal) unset($this->_hydratedByVocal);
+
         return parent::save();
     }
 
@@ -447,6 +460,9 @@ class Vocal extends Model
      */
     public function saveRecursive($rules = array(), $messages = array(), $data = array())
     {
+        // If we don't have any data passed, use input
+        if ( ! count($data)) $data = Input::all();
+
         // Validate first
         $result = $this->validateRecursive($rules, $messages, $data);
 
@@ -571,9 +587,6 @@ class Vocal extends Model
         // Fire validating event
         if ($this->fireModelEvent('validating') === false) return false;
 
-        // If we don't have any data passed, use input
-        if ( ! count($data)) $data = Input::all();
-
         // If we have rules, use them, otherwise use rules from model
         $rules = ( ! count($rules)) ? $this->rules : $rules;
 
@@ -594,7 +607,13 @@ class Vocal extends Model
         if ( ! count($messages)) $messages = $this->loadCustomMessages($rules);
 
         // We're finally ready, fill record with data if we need to
-        if ($this->fillFromInput) $this->fill($data);
+        if ($this->fillFromInput && ! $this->_hydratedByVocal)
+        {
+            // If we don't have any data passed, use input
+            if ( ! count($data)) $data = Input::all();
+
+            $this->hydrate($data);
+        }
 
         // Determine what we're validating
         $model = $this->getAttributes();

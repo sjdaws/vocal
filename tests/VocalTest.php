@@ -131,5 +131,16 @@ class TestCase extends \Orchestra\Testbench\TestCase
 
         // Make sure child was updated
         $this->assertTrue($test->children[1]->description == 'Child X', $this->errorResponse('Child record was not updated correctly', $test->children[1]));
+
+        // Test saving non-recursive
+        $input->replace(array(
+            'description' => 'Non-recursive'
+        ));
+
+        $test = new Test;
+        $result = $test->save();
+
+        // Check save was successful
+        $this->assertTrue($result, $this->errorResponse('Record was not saved', $test));
     }
 }
