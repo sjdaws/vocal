@@ -18,7 +18,7 @@ class Test extends Vocal
      *
      * @var array
      */
-    protected $rules = array(
+    public $rules = array(
         'description' => array('required', 'unique')
     );
 
