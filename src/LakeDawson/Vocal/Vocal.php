@@ -54,7 +54,7 @@ class Vocal extends Model
      *
      * @var array
      */
-    protected $rules = array();
+    public $rules = array();
 
     /**
      * Create a new model instance
@@ -331,7 +331,7 @@ class Vocal extends Model
      * @param array $data
      * @return void
      */
-    public function hydrate($data)
+    private function hydrate($data)
     {
         $this->fill($data);
         $this->_hydratedByVocal = true;
@@ -399,7 +399,7 @@ class Vocal extends Model
      * @param array $data
      * @param return void
      */
-    public function removeInvalidAttributes()
+    private function removeInvalidAttributes()
     {
         foreach ($this->getAttributes() as $attribute => $data)
         {

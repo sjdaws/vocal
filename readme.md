@@ -180,12 +180,12 @@ class User extends Vocal
 <a name="simple"></a>
 ## Simple Validation
 
-Vocal models use Laravel's built-in [Validator class](http://laravel.com/docs/validation). Defining validation rules for a model is simple and is typically done in your model class as a protected `$rules` variable:
+Vocal models use Laravel's built-in [Validator class](http://laravel.com/docs/validation). Defining validation rules for a model is simple and is typically done in your model class as a public `$rules` variable:
 
 ```php
 class User extends Vocal
 {
-    protected $rules = array(
+    public $rules = array(
       'name'  => array('required', 'unique'),
       'email' => array('required', 'email')
     );
@@ -222,7 +222,7 @@ For the following example, our primary key is id, but this can be overridden by 
 ```php
 class User extends Vocal
 {
-    protected $rules = array(
+    public $rules = array(
       'name'  => array('required', 'unique'), // <-- This will automatically change to 'unique:users,name,3,id'
       'email' => array('required', 'email')
     );
@@ -240,7 +240,7 @@ For the following example, our primary key is id, the id of the current record i
 ```php
 class User extends Vocal
 {
-    protected $rules = array(
+    public $rules = array(
       'name'  => array('required', 'unique:~table,~field,~id,id,group_id,~group_id'), // <-- This will automatically change to 'unique:users,name,3,id,group_id,1'
       'email' => array('required', 'email')
     );
@@ -297,7 +297,7 @@ array(
 And our rules are like this on every model (`Record`, `RecordOptions`, `RecordOptionsAnotherlevel`):
 
 ```php
-protected $rules = array(
+public $rules = array(
     'description' => array('required')
 );
 ```
@@ -352,7 +352,7 @@ For example, if we have a user, we might want a better error message for why we 
 ```php
 class User extends Vocal
 {
-    protected $rules = array(
+    public $rules = array(
       'email' => array('required', 'email')
     );
 }
@@ -383,6 +383,12 @@ All functions take two parameters:
 - Second parameter is `$messages`. This must be an array of [custom validation messages](http://laravel.com/docs/validation#custom-error-messages)
 
 An array that is **not empty** will override the rules or custom error messages specified by the class for that instance of the method only.
+
+You can simply append rules for a specific function by using `array_merge`:
+
+```php
+$user->save(array_merge($user->rules, array('username' => array('required'))));
+```
 
 > **Note:** The default value for `$rules` and `$messages` is an empty `array()`. If you pass an empty  `array()` nothing will be overriden.
 
