@@ -1,7 +1,7 @@
 {
     "name": "lakedawson/vocal",
     "description": "Extended functionality for Eloquent in Laravel 4",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "type": "library",
     "license": "MIT",
     "keywords": ["laravel", "eloquent", "orm", "activerecord", "recursive", "hydration", "validation", "angular", "angularjs"],
