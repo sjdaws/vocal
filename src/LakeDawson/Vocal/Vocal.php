@@ -600,9 +600,6 @@ class Vocal extends Model
         // - This will prevent errors with bound objects being saved twice
         $this->removeInvalidAttributes();
 
-        // If we have no rules, we're good to go!
-        if ( ! count($rules)) return true;
-
         // Load custom validation messages if we don't have any passed
         if ( ! count($messages)) $messages = $this->loadCustomMessages($rules);
 
@@ -614,6 +611,9 @@ class Vocal extends Model
 
             $this->hydrate($data);
         }
+
+        // If we have no rules, we're good to go!
+        if ( ! count($rules)) return true;
 
         // Determine what we're validating
         $model = $this->getAttributes();
