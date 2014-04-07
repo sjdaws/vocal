@@ -19,7 +19,7 @@ Copyright (c) 2014 Lake Dawson Software <[https://lakedawson.com/](https://laked
 * [Simple Validation](#simple)
 * [Extended Validation](#extended)
 * [Retrieving Validation Errors](#errors)
-* [i8n Custom Validation Messages](#i8n)
+* [i18n Custom Validation Messages](#i18n)
 * [Overriding Validation](#override)
 * [Hooks](#hooks)
 * [Secure Text Attributes](#secure)
@@ -334,8 +334,8 @@ Array
 ```
 
 
-<a name="i8n"></a>
-## i8n Custom Validation Messages
+<a name="i18n"></a>
+## i18n Custom Validation Messages
 
 Currently if you want to define [custom error messages](http://laravel.com/docs/validation#custom-error-messages) for a model, you must change the default language file or pass them from the controller. Ardent improves on this by allowing you to define them within the model itself.
 
@@ -343,9 +343,9 @@ All of these solutions have a flaw:
 
 * Changing the default language file means your error messages need to be generic, this is especially bad for regex errors
 * Passing error messages from the controller means you need to use `Lang::get()` and define all your error messages over and over again, which is more redundant code especially if you have the same validator for `save` and `update` methods
-* The Ardent method is an improvement but is not i8n friendly. You're stuck with error messages for a single language
+* The Ardent method is an improvement but is not i18n friendly. You're stuck with error messages for a single language
 
-Vocal handles i8n custom messages for you. Simply create a folder called 'validation' in your `lang/locale` directory and add language files with the same name as the model. Vocal will automatically search for a validation language file prior to validating. If no matching language file is found there will be a fallback to the default validation file.
+Vocal handles i18n custom messages for you. Simply create a folder called 'validation' in your `lang/locale` directory and add language files with the same name as the model. Vocal will automatically search for a validation language file prior to validating. If no matching language file is found there will be a fallback to the default validation file.
 
 For example, if we have a user, we might want a better error message for why we need a valid email address. Our model would have these rules:
 
