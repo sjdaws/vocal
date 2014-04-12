@@ -332,7 +332,7 @@ class Vocal extends Model
      * @param array $data
      * @return void
      */
-    private function hydrate($data)
+    private function hydrateModel($data)
     {
         $this->fill($data);
         $this->_hydratedByVocal = true;
@@ -610,7 +610,7 @@ class Vocal extends Model
             // If we don't have any data passed, use input
             if ( ! count($data)) $data = Input::all();
 
-            $this->hydrate($data);
+            $this->hydrateModel($data);
         }
 
         // If we have no rules, we're good to go!
