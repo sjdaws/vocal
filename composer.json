@@ -1,6 +1,6 @@
 {
     "name": "lakedawson/vocal",
-    "description": "Extended functionality for Eloquent in Laravel 4",
+    "description": "Extended functionality for Eloquent in Laravel 4.1",
     "version": "0.1.7",
     "type": "library",
     "license": "MIT",
