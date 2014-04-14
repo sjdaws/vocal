@@ -567,7 +567,7 @@ class Vocal extends Model
                     }
 
                     // Attach the new record set to the parent
-                    $this->setRelation($relationship, $this->$relationship);
+                    $this->setRelation($relationship, $this->newCollection($result));
                 }
             }
 
