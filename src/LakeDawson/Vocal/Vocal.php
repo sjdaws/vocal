@@ -287,23 +287,23 @@ class Vocal extends Model
             if ( ! is_array($value)) continue;
 
             // Make sure snake_case models are resolved to camelCase functions
-            $model = Str::camel($model);
+            $modelClass = Str::camel($model);
 
             // Check if method exists
             if (method_exists($this, $model))
             {
                 // If the function is a relationship instance, assume it's legit
                 if (
-                        $this->$model() instanceof BelongsTo ||
-                        $this->$model() instanceof BelongsToMany ||
-                        $this->$model() instanceof HasMany ||
-                        $this->$model() instanceof HasManyThrough ||
-                        $this->$model() instanceof HasOne ||
-                        $this->$model() instanceof MorphMany ||
-                        $this->$model() instanceof MorphOne ||
-                        $this->$model() instanceof MorphTo
+                        $this->$modelClass() instanceof BelongsTo ||
+                        $this->$modelClass() instanceof BelongsToMany ||
+                        $this->$modelClass() instanceof HasMany ||
+                        $this->$modelClass() instanceof HasManyThrough ||
+                        $this->$modelClass() instanceof HasOne ||
+                        $this->$modelClass() instanceof MorphMany ||
+                        $this->$modelClass() instanceof MorphOne ||
+                        $this->$modelClass() instanceof MorphTo
                     )
-                    $relationships[$model] = $this->getRelationshipType($this->$model());
+                    $relationships[$model] = $this->getRelationshipType($this->$modelClass());
             }
         }
 
@@ -504,7 +504,8 @@ class Vocal extends Model
             $relationErrors = new MessageBag;
 
             // Get class/model we're working on
-            $model = $this->$relationship()->getModel();
+            $modelClass = Str::camel($relationship);
+            $model = $this->$modelClass()->getModel();
 
             // Determine which key we will use to find an existing record
             $key = (isset($model->primaryKey)) ? $model->primaryKey : 'id';
@@ -516,13 +517,13 @@ class Vocal extends Model
             if ($type == 'one')
             {
                 // Find or create record
-                $record = (isset($data[$relationship][$key])) ? $model->find($data[$relationship][$key]) : new $model;
+                $record = (isset($data[$relationship][$key])) ? $model->withTrashed()->find($data[$relationship][$key]) : new $model;
 
                 // Validate
                 $result = $record->validate($relationRules, $relationMessages, $data[$relationship]);
 
                 // Save record on success, log errors on fail
-                if ($result) $result = (method_exists($this->$relationship(), 'associate')) ? $this->$relationship()->associate($record) : $this->$relationship()->save($record);
+                if ($result) $result = (method_exists($this->$modelClass(), 'associate')) ? $this->$modelClass()->associate($record) : $this->$modelClass()->save($record);
                 else $relationErrors->merge($record->errors);
             }
             else
@@ -532,7 +533,7 @@ class Vocal extends Model
                 foreach ($data[$relationship] as $index => $relationData)
                 {
                     // Find or create record
-                    $record = (isset($relationData[$key])) ? $model->find($relationData[$key]) : new $model;
+                    $record = (isset($relationData[$key])) ? $model->withTrashed()->find($relationData[$key]) : new $model;
 
                     // Validate
                     $result = $record->validate($relationRules, $relationMessages, $relationData);
@@ -543,7 +544,7 @@ class Vocal extends Model
                 }
 
                 // Save all the records we can
-                $result = $this->$relationship()->saveMany($records);
+                $result = $this->$modelClass()->saveMany($records);
 
                 // If save was successful, attach to parent
                 if ($result)
@@ -704,7 +705,8 @@ class Vocal extends Model
             $relationErrors = new MessageBag;
 
             // Get class/model we're working on
-            $model = $this->$relationship()->getModel();
+            $modelClass = Str::camel($relationship);
+            $model = $this->$modelClass()->getModel();
 
             // Determine which key we will use to find an existing record
             $key = (isset($model->primaryKey)) ? $model->primaryKey : 'id';
@@ -716,7 +718,7 @@ class Vocal extends Model
             if ($type == 'one')
             {
                 // Find or create record
-                $record = (isset($data[$relationship][$key])) ? $model->find($data[$relationship][$key]) : new $model;
+                $record = (isset($data[$relationship][$key])) ? $model->withTrashed()->find($data[$relationship][$key]) : new $model;
 
                 // Validate and capture errors
                 $result = $record->validate($relationRules, $relationMessages, $data[$relationship]);
@@ -729,7 +731,7 @@ class Vocal extends Model
                 foreach ($data[$relationship] as $index => $relationData)
                 {
                     // Find or create record
-                    $record = (isset($relationData[$key])) ? $model->find($relationData[$key]) : new $model;
+                    $record = (isset($relationData[$key])) ? $model->withTrashed()->find($relationData[$key]) : new $model;
 
                     // Validate and capture errors
                     $result = $record->validate($relationRules, $relationMessages, $relationData);
