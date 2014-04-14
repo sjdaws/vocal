@@ -12,7 +12,6 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Lang;
@@ -292,18 +291,20 @@ class Vocal extends Model
             // Check if method exists
             if (method_exists($this, $model))
             {
+                $instance = $this->$modelClass();
+
                 // If the function is a relationship instance, assume it's legit
                 if (
-                        $this->$modelClass() instanceof BelongsTo ||
-                        $this->$modelClass() instanceof BelongsToMany ||
-                        $this->$modelClass() instanceof HasMany ||
-                        $this->$modelClass() instanceof HasManyThrough ||
-                        $this->$modelClass() instanceof HasOne ||
-                        $this->$modelClass() instanceof MorphMany ||
-                        $this->$modelClass() instanceof MorphOne ||
-                        $this->$modelClass() instanceof MorphTo
+                        $instance instanceof BelongsTo ||
+                        $instance instanceof BelongsToMany ||
+                        $instance instanceof HasMany ||
+                        $instance instanceof HasManyThrough ||
+                        $instance instanceof HasOne ||
+                        $instance instanceof MorphMany ||
+                        $instance instanceof MorphOne ||
+                        $instance instanceof MorphTo
                     )
-                    $relationships[$model] = $this->getRelationshipType($this->$modelClass());
+                    $relationships[$model] = $this->getRelationshipType($instance);
             }
         }
 
@@ -523,7 +524,7 @@ class Vocal extends Model
                 $result = $record->validate($relationRules, $relationMessages, $data[$relationship]);
 
                 // Save record on success, log errors on fail
-                if ($result) $result = (method_exists($this->$modelClass(), 'associate')) ? $this->$modelClass()->associate($record) : $this->$modelClass()->save($record);
+                if ($result) (method_exists($this->$modelClass(), 'associate')) ? $this->$modelClass()->associate($record)->save() : $this->$modelClass()->save($record);
                 else $relationErrors->merge($record->errors);
             }
             else
@@ -546,8 +547,8 @@ class Vocal extends Model
                 // Save all the records we can
                 $result = $this->$modelClass()->saveMany($records);
 
-                // If save was successful, attach to parent
-                if ($result)
+                // If save was successful, process relationship relationships
+                if (count($result))
                 {
                     // Check and save any relationships
                     foreach ($data[$relationship] as $index => $relationData)
@@ -564,11 +565,11 @@ class Vocal extends Model
                             if ( ! $relationshipResult) $relationErrors->add($index, $result[$index]->errors);
                         }
                     }
+
+                    // Attach the new record set to the parent
+                    $this->setRelation($relationship, $this->$relationship);
                 }
             }
-
-            // Attach relationships to parent
-            if ($result) $this->$relationship = $result;
 
             // Merge in any errors we have
             if ($relationErrors->count()) $this->errors->add($relationship, $relationErrors);
