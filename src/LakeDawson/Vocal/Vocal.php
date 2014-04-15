@@ -257,6 +257,20 @@ class Vocal extends Model
     }
 
     /**
+     * Save a model regardless of validation result
+     *
+     * @param array $data
+     * @param Closure $beforeSave
+     * @param Closure $afterSave
+     * @return bool
+     */
+    public function forceSave($data = array(), Closure $before = null, Closure $after = null)
+    {
+        // Force empty ruleset for this model
+        return $this->save(array(null), array(null), $data, $before, $after);
+    }
+
+    /**
      * Get the observable event names
      *
      * @return array
@@ -429,7 +443,7 @@ class Vocal extends Model
         if ($after) self::saved($after);
 
         // Validate record before save unless we're saving a relationship
-        $valid = $this->validate($rules, $messages, $data);
+        $valid = ($this->_validatedByVocal) ? true : $this->validate($rules, $messages, $data);
 
         // If record is invalid, save is unsuccessful
         if ( ! $valid) return false;
@@ -446,8 +460,9 @@ class Vocal extends Model
             }
         }
 
-        // Remove fill indicator if set
+        // Remove fill and validation indicators if set
         if ($this->_hydratedByVocal) unset($this->_hydratedByVocal);
+        if ($this->_validatedByVocal) unset($this->_validatedByVocal);
 
         return parent::save();
     }
@@ -488,6 +503,19 @@ class Vocal extends Model
     }
 
     /**
+     * Attach a model instance to the parent model
+     *
+     * @param  \Illuminate\Database\Eloquent\Model  $model
+     * @return \Illuminate\Database\Eloquent\Model
+     */
+    public function saveRelation(Model $model)
+    {
+        $model->setAttribute($this->getPlainForeignKey(), $this->getParentKey());
+
+        return $model->forceSave() ? $model : false;
+    }
+
+    /**
      * Recursively save records by relationship
      *
      * @param array $rules
@@ -512,8 +540,9 @@ class Vocal extends Model
             $key = (isset($model->primaryKey)) ? $model->primaryKey : 'id';
 
             // Get rules and messages we will use
-            $relationRules = (isset($rules[$relationship])) ? $rules[$relationship] : array();
-            $relationMessages = (isset($messages[$relationship])) ? $messages[$relationship] : array();
+            $relationMessages = $relationRules = array();
+            if (isset($rules[$relationship]) || isset($rules[$modelClass])) $relationRules = (isset($rules[$relationship])) ? $rules[$relationship] : $rules[$modelClass];
+            if (isset($messages[$relationship]) || isset($messages[$modelClass])) $relationMessages = (isset($messages[$relationship])) ? $messages[$relationship] : $messages[$modelClass];
 
             if ($type == 'one')
             {
@@ -524,7 +553,8 @@ class Vocal extends Model
                 $result = $record->validate($relationRules, $relationMessages, $data[$relationship]);
 
                 // Save record on success, log errors on fail
-                if ($result) (method_exists($this->$modelClass(), 'associate')) ? $this->$modelClass()->associate($record)->save() : $this->$modelClass()->save($record);
+                // save returns model
+                if ($result) (method_exists($this->$modelClass(), 'associate')) ? $this->$modelClass()->associate($record)->forceSave() : $this->$modelClass()->saveRelation($record);
                 else $relationErrors->merge($record->errors);
             }
             else
@@ -626,7 +656,13 @@ class Vocal extends Model
         $result = $validator->passes();
 
         // If model is valid, remove old errors
-        if ($result) $this->errors = new MessageBag;
+        if ($result)
+        {
+            $this->errors = new MessageBag;
+
+            // Tag this model as valid
+            $this->_validatedByVocal = true;
+        }
         else
         {
             // Add errors messages
@@ -713,8 +749,9 @@ class Vocal extends Model
             $key = (isset($model->primaryKey)) ? $model->primaryKey : 'id';
 
             // Get rules and messages we will use
-            $relationRules = (isset($rules[$relationship])) ? $rules[$relationship] : array();
-            $relationMessages = (isset($messages[$relationship])) ? $messages[$relationship] : array();
+            $relationMessages = $relationRules = array();
+            if (isset($rules[$relationship]) || isset($rules[$modelClass])) $relationRules = (isset($rules[$relationship])) ? $rules[$relationship] : $rules[$modelClass];
+            if (isset($messages[$relationship]) || isset($messages[$modelClass])) $relationMessages = (isset($messages[$relationship])) ? $messages[$relationship] : $messages[$modelClass];
 
             if ($type == 'one')
             {
