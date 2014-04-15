@@ -607,7 +607,7 @@ class Vocal extends Model
         if ( ! count($messages)) $messages = $this->loadCustomMessages($rules);
 
         // We're finally ready, fill record with data if we need to
-        if ($this->fillFromInput && ! $this->_hydratedByVocal)
+        if ($this->fillFromInput && count($this->fillable) && ! $this->_hydratedByVocal)
         {
             // If we don't have any data passed, use input
             if ( ! count($data)) $data = Input::all();
