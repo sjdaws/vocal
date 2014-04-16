@@ -553,8 +553,17 @@ class Vocal extends Model
                 $result = $record->validate($relationRules, $relationMessages, $data[$relationship]);
 
                 // Save record on success, log errors on fail
-                // save returns model
-                if ($result) (method_exists($this->$modelClass(), 'associate')) ? $this->$modelClass()->associate($record)->forceSave() : $this->$modelClass()->saveRelation($record);
+                if ($result)
+                {
+                    if (method_exists($this->$modelClass(), 'associate')) $this->$modelClass()->associate($record)->forceSave();
+                    else
+                    {
+                        $result = $this->$modelClass()->saveRelation($record);
+
+                        // Attach the new record set to the parent
+                        if ($result) $this->setRelation($relationship, $result);
+                    }
+                }
                 else $relationErrors->merge($record->errors);
             }
             else
