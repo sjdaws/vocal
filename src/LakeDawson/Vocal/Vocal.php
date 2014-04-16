@@ -29,6 +29,13 @@ class Vocal extends Model
     private $data;
 
     /**
+     * Store the differences for updated fields
+     *
+     * @var array
+     */
+    protected $diff = array();
+
+    /**
      * The message bag instance containing validation error messages
      *
      * @var Illuminate\Support\MessageBag
@@ -188,6 +195,44 @@ class Vocal extends Model
         }
 
         return $rules;
+    }
+
+    /**
+     * Determine the difference in a model
+     *
+     * @return array
+     */
+    private function determineDiff()
+    {
+        // Determine what we're working with
+        $attributes = ( ! count($this->getOriginal())) ? $this->getAttributes() : $this->getOriginal();
+        $new = ( ! count($this->getOriginal()));
+
+        // Compare each attribute
+        foreach ($attributes as $key => $value)
+        {
+            // Skip vocal internal keys
+            if ($key == '_hydratedByVocal' || $key == '_validatedByVocal') continue;
+
+            if ($new) $this->diff[$key] = array('new'  => $value);
+            else if ($value != $this->$key)
+            {
+                $this->diff[$key] = array(
+                    'original' => $value,
+                    'updated'  => $this->$key
+                );
+            }
+        }
+    }
+
+    /**
+     * Get the difference between an original model, and updated model
+     *
+     * @return array
+     */
+    public function diff()
+    {
+        return $this->diff;
     }
 
     /**
@@ -532,6 +577,9 @@ class Vocal extends Model
             // Capture any errors from relationships
             $relationErrors = new MessageBag;
 
+            // Capture changes to models
+            $relationDiff = array();
+
             // Get class/model we're working on
             $modelClass = Str::camel($relationship);
             $model = $this->$modelClass()->getModel();
@@ -563,6 +611,9 @@ class Vocal extends Model
                         // Attach the new record set to the parent
                         if ($result) $this->setRelation($relationship, $result);
                     }
+
+                    // Capture record changes
+                    if (count($record->diff)) $relationDiff[] = $record->diff;
                 }
                 else $relationErrors->merge($record->errors);
             }
@@ -589,6 +640,9 @@ class Vocal extends Model
                 // If save was successful, process relationship relationships
                 if (count($result))
                 {
+                    // Check for changes
+                    foreach ($result as $index => $record) if (count($record->diff)) $relationDiff[$index] = $record->diff;
+
                     // Check and save any relationships
                     foreach ($data[$relationship] as $index => $relationData)
                     {
@@ -601,7 +655,11 @@ class Vocal extends Model
                         {
                             $relationshipResult = $result[$index]->saveRelations($relationRules, $relationMessages, $relationRelationships, $relationData);
 
+                            // Capture errors
                             if ( ! $relationshipResult) $relationErrors->add($index, $result[$index]->errors);
+
+                            // Capture changes
+                            if (count($result[$index]->diff)) $relationDiff[$index] = $result[$index]->diff;
                         }
                     }
 
@@ -612,6 +670,9 @@ class Vocal extends Model
 
             // Merge in any errors we have
             if ($relationErrors->count()) $this->errors->add($relationship, $relationErrors);
+
+            // Capture any changes
+            if (count($relationDiff)) $this->diff[$relationship] = $relationDiff;
         }
 
         return ($this->errors->count() == 0);
@@ -653,6 +714,9 @@ class Vocal extends Model
 
             $this->hydrateModel($data);
         }
+
+        // Calculate difference
+        $this->determineDiff();
 
         // If we have no rules, we're good to go!
         if ( ! count($rules)) return true;

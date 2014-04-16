@@ -23,6 +23,7 @@ Copyright (c) 2014 Lake Dawson Software <[https://lakedawson.com/](https://laked
 * [Overriding Validation](#override)
 * [Hooks](#hooks)
 * [Secure Text Attributes](#secure)
+* [Diff Determination](#diff)
 * [Random Word Generator](#random)
 
 
@@ -408,7 +409,7 @@ Here's the complete list of available hooks:
 - `before`/`afterDelete()`
 - `before`/`afterValidate()`
 
-All `before` hooks, when returning `false` (specifically boolean, not simply "falsy" values) will halt the operation. So, for example, if you want to stop saving if something goes wrong in a `beforeSave` method, just `return false` and the save will not happen - and obviously `afterSave` won't be called as well. As validation is run prior to each save, returning false from `afterValidate()` will also stop processing and stop the record from saving.
+All `before` hooks, when returning `false` (specifically boolean, not simply "falsy" values) will halt the operation. So, for example, if you want to stop saving if something goes wrong in a `beforeSave` method, just `return false` and the save will not happen - and obviously `afterSave` won't be called as well. As validation is run prior to each save, returning false from `afterValidate` will also stop processing and stop the record from saving.
 
 For example, you may use `afterCreate` to send a welcome email to a newly registered user:
 
@@ -462,6 +463,64 @@ class User extends Vocal
 ```
 
 Vocal will automatically replace the plain-text attribute with secure hash checksum and save it to database. It uses Laravel's `Hash::make()` method internally to generate the hash.
+
+
+<a name="diff"></a>
+## Diff Determination
+
+If you want to save a record set and just capture the changes which have been made, you can do this via the `Vocal->diff()` method. This will return an array of all changes made to your model. Any fields which are the same/haven't been updated will be ignored.
+
+For example, if we have a user, and they make multiple updates at the same time:
+
+* Username from 'Superman' to 'SUPERman'
+* Correct house number on address #4
+* Add a new address
+
+`Vocal->diff()` will return an array like this:
+
+```php
+Array
+(
+    [username] => Array
+        (
+            [original] => Superman
+            [updated] => SUPERman
+        )
+
+    [addresses] => Array
+        (
+            [4] => Array
+                (
+                    [street_address] => Array
+                        (
+                            [original] => 14 Bush Street
+                            [updated] => 16 Bush Street
+                        )
+                )
+            [5] => Array
+                (
+                    [name] => Array
+                        (
+                            [new] => John Smith
+                        )
+
+                    [street_address] => Array
+                        (
+                            [new] => 18 Boardwalk Boulevard
+                        )
+
+                    [city] => Array
+                        (
+                            [new] => Testton
+                        )
+
+                    ...
+                )
+
+        )
+
+)
+```
 
 
 <a name="random"></a>
