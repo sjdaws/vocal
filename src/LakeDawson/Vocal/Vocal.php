@@ -403,7 +403,7 @@ class Vocal extends Model
      *
      * @return void
      */
-    private function loadCustomMessages($rules)
+    public function loadCustomMessages($rules)
     {
         // If we don't have any rules, don't do anything
         if ( ! count($rules)) return;
