@@ -316,6 +316,23 @@ class Vocal extends Model
     }
 
     /**
+     * Force save a record, then delete it
+     *
+     * @param array $data
+     * @param Closure $beforeSave
+     * @param Closure $afterSave
+     * @return bool
+     */
+    public function forceSaveAndDelete($data = array(), Closure $before = null, Closure $after = null)
+    {
+        $result = $this->save(array(null), array(null), $data, $before, $after);
+
+        $this->delete();
+
+        return $result;
+    }
+
+    /**
      * Get the observable event names
      *
      * @return array
@@ -513,6 +530,25 @@ class Vocal extends Model
     }
 
     /**
+     * Save a record, then delete it
+     *
+     * @param array $rules
+     * @param array $messages
+     * @param array $data
+     * @param Closure $beforeSave
+     * @param Closure $afterSave
+     * @return bool
+     */
+    public function saveAndDelete($rules = array(), $messages = array(), $data = array(), Closure $before = null, Closure $after = null)
+    {
+        $result = $this->save($rules, $messages, $data, $before, $after);
+
+        $this->delete();
+
+        return $result;
+    }
+
+    /**
      * Recursively save a record
      *
      * @param array $rules
@@ -520,7 +556,7 @@ class Vocal extends Model
      * @param array $data
      * @return int
      */
-    public function saveRecursive($rules = array(), $messages = array(), $data = array())
+    public function saveRecursive($rules = array(), $messages = array(), $data = array(), Closure $before = null, Closure $after = null)
     {
         // If we don't have any data passed, use input
         if ( ! count($data)) $data = Input::all();
@@ -531,7 +567,7 @@ class Vocal extends Model
         if ( ! $result) return false;
 
         // Save this record
-        $result = $this->save($rules, $messages, $data);
+        $result = $this->save($rules, $messages, $data, $before, $after);
 
         if ( ! $result) return false;
 
@@ -676,6 +712,20 @@ class Vocal extends Model
         }
 
         return ($this->errors->count() == 0);
+    }
+
+    /**
+     * Generate a compatible timestamp using now as default
+     *
+     * @param mixed $value
+     * @return string
+     */
+    public function timestamp($value = null)
+    {
+        // Use now if no time was passed
+        if ( ! $value) $value = $this->freshTimestamp();
+
+        return $this->fromDateTime($value);
     }
 
     /**
