@@ -24,6 +24,8 @@ Copyright (c) 2014 Lake Dawson Software <[https://lakedawson.com/](https://laked
 * [Hooks](#hooks)
 * [Secure Text Attributes](#secure)
 * [Diff Determination](#diff)
+* [Timestamps](#timestamp)
+* [Save And Delete](#sandd)
 * [Random Word Generator](#random)
 
 
@@ -521,6 +523,23 @@ Array
 
 )
 ```
+
+
+<a name="timestamp"></a>
+## Timestamps
+
+Vocal provides an easy way to update timestamps on your models by mimicking Laravel's `fromDateTime` and `freshTimestamp` methods. This is particularly useful when you're working with timestamps that aren't part of Laravel's core. The `timestamp` method accepts one optional parameter `$value`. This is any time that `fromDateTime` will understand.
+
+```php
+$user->last_login = $user->timestamp(); // Will be now
+$user->blocked_until = $user->timestamp('2014-08-16'); // Will be 16th August, 2014
+```
+
+
+<a name="sandd"></a>
+## Save and Delete
+
+When working with soft deletes, sometimes you want to save some information to a model before you soft delete it. Vocal provides this with `saveAndDelete` and `forceSaveAndDelete` methods. These methods accept the same parameters as `save` and `forceSave`.
 
 
 <a name="random"></a>
