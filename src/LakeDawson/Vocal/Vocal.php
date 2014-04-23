@@ -228,11 +228,12 @@ class Vocal extends Model
     /**
      * Get the difference between an original model, and updated model
      *
+     * @param string $filter [= null]
      * @return array
      */
-    public function diff()
+    public function diff($filter = null)
     {
-        return $this->diff;
+        return array_get($this->diff, $filter);
     }
 
     /**
