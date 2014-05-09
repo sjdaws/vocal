@@ -197,7 +197,7 @@ class Vocal extends Model
                 $rule = $type;
 
                 // Don't try and join parameters unless we have some
-                if ( ! $parameters || empty(array_filter($parameters))) continue;
+                if ( ! $parameters || ! count(array_filter($parameters))) continue;
 
                 if (is_array($parameters) && count($parameters)) $rule .= ':' . implode(',', $parameters);
                 else $rule .= ':' . $parameters;
