@@ -76,38 +76,6 @@ class Vocal extends Model
     }
 
     /**
-     * Override to boot method of each model to attach before and after hooks
-     *
-     * @see Illuminate\Database\Eloquent\Model::boot()
-     * @return void
-     */
-    public static function boot()
-    {
-        parent::boot();
-
-        $hooks    = array('before' => 'ing', 'after' => 'ed');
-        $radicals = array('sav', 'validat', 'creat', 'updat', 'delet');
-
-        foreach ($radicals as $rad)
-        {
-            foreach ($hooks as $hook => $event)
-            {
-                $method = $hook . ucfirst($rad) . 'e';
-
-                if (method_exists(get_called_class(), $method))
-                {
-                    $eventMethod = $rad . $event;
-
-                    self::$eventMethod(function($model) use ($method)
-                    {
-                        return $model->$method($model);
-                    });
-                }
-            }
-        }
-    }
-
-    /**
      * Build validation rules
      * - This function replaces ~attributes with their values
      * - ~table will be replaced with the table name and ~field will be replaced with the field name
@@ -198,6 +166,22 @@ class Vocal extends Model
     }
 
     /**
+     * Delete a model
+     *
+     * @return bool
+     */
+    public function delete()
+    {
+        if (method_exists(get_called_class(), 'beforeDelete')) $this->beforeDelete();
+
+        $result = parent::delete();
+
+        if (method_exists(get_called_class(), 'afterDelete')) $this->afterDelete();
+
+        return $result;
+    }
+
+    /**
      * Determine the difference in a model
      *
      * @return array
@@ -228,12 +212,11 @@ class Vocal extends Model
     /**
      * Get the difference between an original model, and updated model
      *
-     * @param string $filter [= null]
      * @return array
      */
-    public function diff($filter = null)
+    public function diff()
     {
-        return array_get($this->diff, $filter);
+        return $this->diff;
     }
 
     /**
@@ -306,8 +289,8 @@ class Vocal extends Model
      * Save a model regardless of validation result
      *
      * @param array $data
-     * @param Closure $beforeSave
-     * @param Closure $afterSave
+     * @param Closure $before
+     * @param Closure $after
      * @return bool
      */
     public function forceSave($data = array(), Closure $before = null, Closure $after = null)
@@ -320,8 +303,8 @@ class Vocal extends Model
      * Force save a record, then delete it
      *
      * @param array $data
-     * @param Closure $beforeSave
-     * @param Closure $afterSave
+     * @param Closure $before
+     * @param Closure $after
      * @return bool
      */
     public function forceSaveAndDelete($data = array(), Closure $before = null, Closure $after = null)
@@ -492,16 +475,18 @@ class Vocal extends Model
      * @param array $rules
      * @param array $messages
      * @param array $data
-     * @param Closure $beforeSave
-     * @param Closure $afterSave
+     * @param Closure $before
+     * @param Closure $after
      * @return bool
      */
     public function save(array $rules = array(), $messages = array(), $data = array(), Closure $before = null, Closure $after = null)
     {
-        // Boot model to enable hooks
-        self::boot();
+        // Run hooks, and abort if false is returned
+        if (method_exists(get_called_class(), 'beforeCreate') && ! $this->exists) if ($this->beforeCreate() === false) return false;
+        if (method_exists(get_called_class(), 'beforeUpdate') && $this->exists) if ($this->beforeUpdate() === false) return false;
+        if (method_exists(get_called_class(), 'beforeSave')) if ($this->beforeSave() === false) return false;
 
-        // Add before/after save hooks
+        // Add before/after save hooks passed via attributes
         if ($before) self::saving($before);
         if ($after) self::saved($after);
 
@@ -527,7 +512,16 @@ class Vocal extends Model
         if ($this->_hydratedByVocal) unset($this->_hydratedByVocal);
         if ($this->_validatedByVocal) unset($this->_validatedByVocal);
 
-        return parent::save();
+        $result = parent::save();
+
+        // Only call hooks if we were successful
+        if ( ! $result) return $result;
+
+        if (method_exists(get_called_class(), 'afterCreate') && ! $this->exists) $this->afterCreate();
+        if (method_exists(get_called_class(), 'afterUpdate') && $this->exists) $this->afterUpdate();
+        if (method_exists(get_called_class(), 'afterSave')) $this->afterSave();
+
+        return $result;
     }
 
     /**
@@ -536,8 +530,8 @@ class Vocal extends Model
      * @param array $rules
      * @param array $messages
      * @param array $data
-     * @param Closure $beforeSave
-     * @param Closure $afterSave
+     * @param Closure $before
+     * @param Closure $after
      * @return bool
      */
     public function saveAndDelete($rules = array(), $messages = array(), $data = array(), Closure $before = null, Closure $after = null)
@@ -738,6 +732,9 @@ class Vocal extends Model
      */
     public function validate($rules = array(), $messages = array(), $data = array())
     {
+        // Call validation hook
+        if (method_exists(get_called_class(), 'beforeValidate')) if ($this->beforeValidate() === false) return false;
+
         // Fire validating event
         if ($this->fireModelEvent('validating') === false) return false;
 
@@ -795,6 +792,9 @@ class Vocal extends Model
             // Stash the input to the current session
             if (Input::hasSession()) Input::flash();
         }
+
+        // Call after hook
+        if (method_exists(get_called_class(), 'afterValidate')) if ($this->afterValidate() === false) return false;
 
         $this->fireModelEvent('validated', false);
 
