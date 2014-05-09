@@ -425,6 +425,47 @@ public function afterCreate()
 
 The above example is especially useful for situations where users may be able to register themselves, but you also have an administration panel where you can add users manually. Instead of putting the code in each controller, you can place it in the model and it will be fired for each registration.
 
+#### Listeners vs Direct calls
+
+Vocal allows hooks to be called two ways. By default Laravel uses [listeners](http://laravel.com/docs/events#basic-usage) to trigger events, and listeners are great but they are very very slow. If we use listeners to register our call backs there can be a massive impact on the performance of your application.
+
+Listeners can be toggled by setting the `useHookListeners` variable in your model to `true`.
+
+```php
+class User extends Vocal
+{
+    protected $useHookListeners = true;
+}
+```
+
+As of [v0.1.14](https://github.com/lakedawson/vocal/releases/tag/v0.1.14) Vocal no longer uses listeners by default for hooks, but rather uses direct calls. The performance benefits of this can be outstanding, here is an example of migrating 3085 records from one database to another, there is a hook to `beforeCreate` to ensure each record has a `send_at` timestamp.
+
+```php
+class MaillistEmail extends Base
+{
+    public function beforeCreate()
+    {
+        if ( ! $this->send_at) $this->send_at = $this->timestamp();
+    }
+}
+```
+
+If we use listeners, it takes nearly 3 minutes for the records to migrate at around 19 records per minute:
+
+```unix
+Homer:vocal scott$ php artisan db:seed
+Seeded: MaillistSeeder
+Maillists seeded in: 160.09s
+```
+
+If we use direct calls, it only takes 7 seconds to migrate at around 36,000 records per minute:
+
+```unix
+Homer:vocal scott$ php artisan db:seed
+Seeded: MaillistSeeder
+Maillists seeded in: 7.1s
+```
+
 #### Additional beforeSave and afterSave
 
 `beforeSave` and `afterSave` can be included at run-time. Simply pass in closures with the model as argument to the `save()` (or `forceSave()`) method.

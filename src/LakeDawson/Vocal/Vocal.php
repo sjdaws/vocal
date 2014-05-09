@@ -64,6 +64,13 @@ class Vocal extends Model
     public $rules = array();
 
     /**
+     * Determine whether to use listeners or direct calls for hooks
+     *
+     * @var bool
+     */
+    protected $useHookListeners = false;
+
+    /**
      * Create a new model instance
      *
      * @param array $attributes
@@ -73,6 +80,41 @@ class Vocal extends Model
     {
         parent::__construct($attributes);
         $this->errors = new MessageBag;
+
+        // Boot model to enable hooks
+        if ($this->useHookListeners) self::boot();
+    }
+
+    /**
+     * Override to boot method of each model to attach before and after hooks
+     *
+     * @see Illuminate\Database\Eloquent\Model::boot()
+     * @return void
+     */
+    public static function boot()
+    {
+        parent::boot();
+
+        $hooks    = array('before' => 'ing', 'after' => 'ed');
+        $radicals = array('sav', 'validat', 'creat', 'updat', 'delet');
+
+        foreach ($radicals as $rad)
+        {
+            foreach ($hooks as $hook => $event)
+            {
+                $method = $hook . ucfirst($rad) . 'e';
+
+                if (method_exists(get_called_class(), $method))
+                {
+                    $eventMethod = $rad . $event;
+
+                    self::$eventMethod(function($model) use ($method)
+                    {
+                        return $model->$method($model);
+                    });
+                }
+            }
+        }
     }
 
     /**
@@ -145,8 +187,8 @@ class Vocal extends Model
                         $uniqueRule[] = (isset($parameters[3])) ? $parameters[3] : 'id';
                     }
 
-                    // If we have exactly 5 parameters then we use the where clause field to fill the exclusion
-                    if (count($uniqueRule) == 5) $uniqueRule[] = $this->{$uniqueRule[4]};
+                    // If we have exactly 6 parameters then we use the where clause field to fill the exclusion
+                    if (count($parameters) > 4) for ($i = 4; $i < count($parameters); ++$i) $uniqueRule[] = $parameters[$i];
 
                     $parameters = $uniqueRule;
                 }
@@ -155,7 +197,7 @@ class Vocal extends Model
                 $rule = $type;
 
                 // Don't try and join parameters unless we have some
-                if ( ! $parameters) continue;
+                if ( ! $parameters || empty(array_filter($parameters))) continue;
 
                 if (is_array($parameters) && count($parameters)) $rule .= ':' . implode(',', $parameters);
                 else $rule .= ':' . $parameters;
@@ -212,12 +254,11 @@ class Vocal extends Model
     /**
      * Get the difference between an original model, and updated model
      *
-     * @param string $filter [= null]
      * @return array
      */
-    public function diff($filter = null)
+    public function diff()
     {
-        return ($filter) ? array_get($this->diff, $filter) : $this->diff;
+        return $this->diff;
     }
 
     /**
@@ -482,10 +523,13 @@ class Vocal extends Model
      */
     public function save(array $rules = array(), $messages = array(), $data = array(), Closure $before = null, Closure $after = null)
     {
-        // Run hooks, and abort if false is returned
-        if (method_exists(get_called_class(), 'beforeCreate') && ! $this->exists) if ($this->beforeCreate() === false) return false;
-        if (method_exists(get_called_class(), 'beforeUpdate') && $this->exists) if ($this->beforeUpdate() === false) return false;
-        if (method_exists(get_called_class(), 'beforeSave')) if ($this->beforeSave() === false) return false;
+        if ( ! $this->useHookListeners)
+        {
+            // Run hooks, and abort if false is returned
+            if (method_exists(get_called_class(), 'beforeCreate') && ! $this->exists) if ($this->beforeCreate() === false) return false;
+            if (method_exists(get_called_class(), 'beforeUpdate') && $this->exists) if ($this->beforeUpdate() === false) return false;
+            if (method_exists(get_called_class(), 'beforeSave')) if ($this->beforeSave() === false) return false;
+        }
 
         // Add before/after save hooks passed via attributes
         if ($before) self::saving($before);
@@ -518,9 +562,12 @@ class Vocal extends Model
         // Only call hooks if we were successful
         if ( ! $result) return $result;
 
-        if (method_exists(get_called_class(), 'afterCreate') && ! $this->exists) $this->afterCreate();
-        if (method_exists(get_called_class(), 'afterUpdate') && $this->exists) $this->afterUpdate();
-        if (method_exists(get_called_class(), 'afterSave')) $this->afterSave();
+        if ( ! $this->useHookListeners)
+        {
+            if (method_exists(get_called_class(), 'afterCreate') && ! $this->exists) $this->afterCreate();
+            if (method_exists(get_called_class(), 'afterUpdate') && $this->exists) $this->afterUpdate();
+            if (method_exists(get_called_class(), 'afterSave')) $this->afterSave();
+        }
 
         return $result;
     }
@@ -734,7 +781,7 @@ class Vocal extends Model
     public function validate($rules = array(), $messages = array(), $data = array())
     {
         // Call validation hook
-        if (method_exists(get_called_class(), 'beforeValidate')) if ($this->beforeValidate() === false) return false;
+        if ( ! $this->useHookListeners && method_exists(get_called_class(), 'beforeValidate')) if ($this->beforeValidate() === false) return false;
 
         // Fire validating event
         if ($this->fireModelEvent('validating') === false) return false;
@@ -795,7 +842,7 @@ class Vocal extends Model
         }
 
         // Call after hook
-        if (method_exists(get_called_class(), 'afterValidate')) if ($this->afterValidate() === false) return false;
+        if ( ! $this->useHookListeners && method_exists(get_called_class(), 'afterValidate')) if ($this->afterValidate() === false) return false;
 
         $this->fireModelEvent('validated', false);
 
