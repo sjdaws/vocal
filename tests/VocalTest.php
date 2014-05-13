@@ -142,5 +142,19 @@ class TestCase extends \Orchestra\Testbench\TestCase
 
         // Check save was successful
         $this->assertTrue($result, $this->errorResponse('Record was not saved', $test));
+
+        // Test hashes
+        $input->replace(array(
+            'description' => 'Password test',
+            'password'    => 'password'
+        ));
+
+        $test = new Test;
+        $result = $test->save();
+
+        // Check save was successful
+        $this->assertTrue($result, $this->errorResponse('Record was not saved', $test));
+
+        $this->assertTrue($test->password && $test->password != $input->get('password'), $this->errorResponse('Record was not saved', $test));
     }
 }

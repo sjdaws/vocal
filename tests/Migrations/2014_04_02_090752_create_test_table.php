@@ -23,6 +23,7 @@ class CreateTestTable extends Migration
 		{
 			$t->increments('id')->unsigned();
 			$t->string('description', 100);
+			$t->string('password', 200)->nullable();
 			$t->timestamps();
         });
     }

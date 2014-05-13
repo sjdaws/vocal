@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Hashing\BcryptHasher;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Validator;
@@ -33,6 +33,9 @@ use Illuminate\Support\MessageBag;
  * @method void beforeSave()
  * @method void beforeUpdate()
  * @method void beforeValidate()
+ * @method bool forceSave()
+ * @method string getParentKey()
+ * @method string getPlainForeignKey()
  */
 
 class Vocal extends Model
@@ -64,6 +67,13 @@ class Vocal extends Model
      * @var bool
      */
     protected $fillFromInput = true;
+
+    /**
+     * The hash class for hashing attributes
+     *
+     * @var Illuminate\Hashing\HasherInterface
+     */
+    private $hasher;
 
     /**
      * Hash attributes automatically on save
@@ -113,6 +123,8 @@ class Vocal extends Model
 
         // Boot model to enable hooks
         if ($this->useHookListeners) self::boot();
+
+        $this->hasher = new BcryptHasher;
     }
 
     /**
@@ -513,7 +525,7 @@ class Vocal extends Model
         if ( ! count($rules)) return;
 
         // Determine file for validation messages
-        $file = 'validation/' . get_called_class() . '.';
+        $file = 'validation/' . str_replace('\\', '/', get_called_class()) . '.';
 
         $messages = array();
 
@@ -531,10 +543,16 @@ class Vocal extends Model
 
                 // We have a couple of options where language files could be saved,
                 // try: Model.php and model.php, as well as Model_Model.php and Model/Model.php
-                if (Lang::has($file . $key)) $messages[$key] = Lang::get($file . $key);
-                elseif (Lang::has(Str::lower($file) . $key)) $messages[$key] = Lang::get(Str::lower($file) . $key);
-                elseif (Lang::has(str_replace('_', '/', $file) . $key)) $messages[$key] = Lang::get(str_replace('_', '/', $file) . $key);
-                elseif (Lang::has(Str::lower(str_replace('_', '/', $file)) . $key)) $messages[$key] = Lang::get(Str::lower(str_replace('_', '/', $file)) . $key);
+                $attempts = array($file . $key, Str::lower($file) . $key, str_replace('_', '/', $file) . $key, Str::lower(str_replace('_', '/', $file)) . $key);
+
+                foreach ($attempts as $attempt)
+                {
+                    if (Lang::has($attempt))
+                    {
+                        $messages[$key] = Lang::get($attempt);
+                        continue;
+                    }
+                }
             }
         }
 
@@ -604,7 +622,7 @@ class Vocal extends Model
         {
             foreach ($this->attributes as $key => $value)
             {
-                if (in_array($key, $this->hashAttributes) && ! is_null($value) && $value != $this->getOriginal($key)) $this->attributes[$key] = Hash::make($value);
+                if (in_array($key, $this->hashAttributes) && ! is_null($value) && $value != $this->getOriginal($key)) $this->attributes[$key] = $this->hasher->make($value);
             }
         }
 

@@ -11,7 +11,14 @@ class Test extends Vocal
      *
      * @var array
      */
-    protected $fillable = array('description');
+    protected $fillable = array('description', 'password');
+
+    /**
+     * Hash password
+     *
+     * @var array
+     */
+    protected $hashAttributes = array('password');
 
     /**
      * The rules for validating this model
