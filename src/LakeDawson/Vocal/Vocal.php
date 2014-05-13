@@ -19,6 +19,20 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Support\MessageBag;
 
+/**
+ * Extends model
+ *
+ * @property int $id
+ * @method void afterCreate()
+ * @method void afterSave()
+ * @method void afterUpdate()
+ * @method void afterValidate()
+ * @method void beforeCreate()
+ * @method void beforeSave()
+ * @method void beforeUpdate()
+ * @method void beforeValidate()
+ */
+
 class Vocal extends Model
 {
     /**
@@ -69,6 +83,20 @@ class Vocal extends Model
      * @var bool
      */
     protected $useHookListeners = false;
+
+    /**
+     * Determine whether the model has been hydrated
+     *
+     * @var bool
+     */
+    private $_hydratedByVocal = false;
+
+    /**
+     * Determine whether the model has been validated
+     *
+     * @var bool
+     */
+    private $_validatedByVocal = false;
 
     /**
      * Create a new model instance
@@ -307,11 +335,7 @@ class Vocal extends Model
         foreach ($error as $key => $errors)
         {
             // If error is a MessageBag, extract errors
-            if ($errors instanceof MessageBag)
-            {
-                return $this->extractErrors($errors->toArray());
-                continue;
-            }
+            if ($errors instanceof MessageBag) return $this->extractErrors($errors->toArray());
 
             // If we have an array of errors preserve key
             if (is_array($errors))
@@ -351,7 +375,7 @@ class Vocal extends Model
      */
     public function forceSaveAndDelete($data = array(), Closure $before = null, Closure $after = null)
     {
-        $result = $this->save(array(null), array(null), $data, $before, $after);
+        $result = $this->forceSave();
 
         $this->delete();
 
@@ -372,12 +396,36 @@ class Vocal extends Model
     }
 
     /**
+     * Get data for a relationship
+     *
+     * @param array $conditions
+     * @param array $rules
+     * @param array $messages
+     * @return array
+     */
+    private function getRelationshipData($relationship, $conditions, $rules, $messages)
+    {
+        // Determine model name
+        $modelClass = Str::camel($relationship);
+
+        // Get conditions, rules and messages we will use
+        $relationConditions = $relationMessages = $relationRules = array();
+
+        if (isset($conditions[$relationship]) || isset($conditions[$modelClass])) $relationConditions = (isset($conditions[$relationship])) ? $conditions[$relationship] : $conditions[$modelClass];
+        if (isset($rules[$relationship]) || isset($rules[$modelClass]))           $relationRules = (isset($rules[$relationship])) ? $rules[$relationship] : $rules[$modelClass];
+        if (isset($messages[$relationship]) || isset($messages[$modelClass]))     $relationMessages = (isset($messages[$relationship])) ? $messages[$relationship] : $messages[$modelClass];
+
+        return array($relationConditions, $relationRules, $relationMessages);
+    }
+
+    /**
      * Check whether passed data contains a relationship or not
      *
      * @param array $data
+     * @param array $conditions
      * @return array
      */
-    private function getRelationships($data)
+    private function getRelationships($data, $conditions)
     {
         $relationships = array();
 
@@ -389,6 +437,9 @@ class Vocal extends Model
 
             // Make sure snake_case models are resolved to camelCase functions
             $modelClass = Str::camel($model);
+
+            // Check if we're excluding this model
+            if ((isset($conditions['except']) && (in_array($model, $conditions['except']) || in_array($modelClass, $conditions['except']))) || (isset($conditions['only']) && ( ! in_array($modelClass, $conditions['only']) && ! in_array($modelClass, $conditions['only'])))) continue;
 
             // Check if method exists
             if (method_exists($this, $model))
@@ -505,10 +556,7 @@ class Vocal extends Model
      */
     private function removeInvalidAttributes()
     {
-        foreach ($this->getAttributes() as $attribute => $data)
-        {
-            if ( ! is_null($data) && ! is_scalar($data)) unset($this->$attribute);
-        }
+        foreach ($this->getAttributes() as $attribute => $data) if ( ! is_null($data) && ! is_scalar($data)) unset($this->$attribute);
     }
 
     /**
@@ -546,10 +594,7 @@ class Vocal extends Model
         {
             foreach ($this->attributes as $key => $value)
             {
-                if (in_array($key, $this->hashAttributes) && ! is_null($value))
-                {
-                    if ($value != $this->getOriginal($key)) $this->attributes[$key] = Hash::make($value);
-                }
+                if (in_array($key, $this->hashAttributes) && ! is_null($value) && $value != $this->getOriginal($key)) $this->attributes[$key] = Hash::make($value);
             }
         }
 
@@ -594,18 +639,19 @@ class Vocal extends Model
     /**
      * Recursively save a record
      *
+     * @param array $conditions
      * @param array $rules
      * @param array $messages
      * @param array $data
      * @return int
      */
-    public function saveRecursive($rules = array(), $messages = array(), $data = array(), Closure $before = null, Closure $after = null)
+    public function saveRecursive($conditions = array(), $rules = array(), $messages = array(), $data = array(), Closure $before = null, Closure $after = null)
     {
         // If we don't have any data passed, use input
         if ( ! count($data)) $data = Input::all();
 
         // Validate first
-        $result = $this->validateRecursive($rules, $messages, $data);
+        $result = $this->validateRecursive($conditions, $rules, $messages, $data);
 
         if ( ! $result) return false;
 
@@ -615,13 +661,13 @@ class Vocal extends Model
         if ( ! $result) return false;
 
         // See if we have any relationships to validate
-        $relationships = $this->getRelationships($data);
+        $relationships = $this->getRelationships($data, $conditions);
 
         // If we don't have any relationships or save failed, return errors
         if ( ! count($relationships) || ! $result) return $result;
 
         // Save relationships
-        $result = $this->saveRelations($rules, $messages, $relationships, $data);
+        $result = $this->saveRelations($conditions, $rules, $messages, $relationships, $data);
 
         return $result;
     }
@@ -648,7 +694,7 @@ class Vocal extends Model
      * @param array $relationships
      * @return bool
      */
-    private function saveRelations($rules, $messages, $relationships, $data)
+    private function saveRelations($conditions, $rules, $messages, $relationships, $data)
     {
         // Process each relationships
         foreach ($relationships as $relationship => $type)
@@ -666,10 +712,8 @@ class Vocal extends Model
             // Determine which key we will use to find an existing record
             $key = (isset($model->primaryKey)) ? $model->primaryKey : 'id';
 
-            // Get rules and messages we will use
-            $relationMessages = $relationRules = array();
-            if (isset($rules[$relationship]) || isset($rules[$modelClass])) $relationRules = (isset($rules[$relationship])) ? $rules[$relationship] : $rules[$modelClass];
-            if (isset($messages[$relationship]) || isset($messages[$modelClass])) $relationMessages = (isset($messages[$relationship])) ? $messages[$relationship] : $messages[$modelClass];
+            // Get conditions, rules and messages we will use
+            list($relationConditions, $relationMessages, $relationRules) = $this->getRelationshipData($relationship, $conditions, $rules, $messages);
 
             if ($type == 'one')
             {
@@ -728,7 +772,7 @@ class Vocal extends Model
                         // If record wasn't saved, skip
                         if ( ! isset($result[$index])) continue;
 
-                        $relationRelationships = $result[$index]->getRelationships($relationData);
+                        $relationRelationships = $result[$index]->getRelationships($relationData, $relationConditions);
 
                         if (count($relationRelationships))
                         {
@@ -777,6 +821,7 @@ class Vocal extends Model
      * @param array $rules [= array()]
      * @param array $messages [= array()]
      * @param array $data [= array()]
+     * @return bool
      */
     public function validate($rules = array(), $messages = array(), $data = array())
     {
@@ -874,9 +919,13 @@ class Vocal extends Model
     /**
      * Recursively validate a recordset
      *
-     * @param array $rules
+     * @param array $conditions [= array()]
+     * @param array $rules [= array()]
+     * @param array $messages [= array()]
+     * @param array $data [= array()]
+     * @return bool
      */
-    public function validateRecursive($rules = array(), $messages = array(), $data = array())
+    public function validateRecursive($conditions = array(), $rules = array(), $messages = array(), $data = array())
     {
         // If we don't have any data passed, use input
         if ( ! count($data)) $data = Input::all();
@@ -885,13 +934,13 @@ class Vocal extends Model
         $this->validate($rules, $messages, $data);
 
         // See if we have any relationships to validate
-        $relationships = $this->getRelationships($data);
+        $relationships = $this->getRelationships($data, $conditions);
 
         // If we don't have any relationships, return errors if we have them
         if ( ! count($relationships)) return ($this->errors->count() == 0);
 
         // Validate relationships
-        $result = $this->validateRelations($rules, $messages, $relationships, $data);
+        $result = $this->validateRelations($conditions, $rules, $messages, $relationships, $data);
 
         return $result;
     }
@@ -899,13 +948,14 @@ class Vocal extends Model
     /**
      * Recursively save records by relationship
      *
+     * @param array $conditions
      * @param array $rules
      * @param array $messages
      * @param array $data
      * @param array $relationships
      * @return bool
      */
-    private function validateRelations($rules, $messages, $relationships, $data)
+    private function validateRelations($conditions, $rules, $messages, $relationships, $data)
     {
         // Process each relationships
         foreach ($relationships as $relationship => $type)
@@ -921,9 +971,7 @@ class Vocal extends Model
             $key = (isset($model->primaryKey)) ? $model->primaryKey : 'id';
 
             // Get rules and messages we will use
-            $relationMessages = $relationRules = array();
-            if (isset($rules[$relationship]) || isset($rules[$modelClass])) $relationRules = (isset($rules[$relationship])) ? $rules[$relationship] : $rules[$modelClass];
-            if (isset($messages[$relationship]) || isset($messages[$modelClass])) $relationMessages = (isset($messages[$relationship])) ? $messages[$relationship] : $messages[$modelClass];
+            list($relationConditions, $relationMessages, $relationRules) = $this->getRelationshipData($relationship, $conditions, $rules, $messages);
 
             if ($type == 'one')
             {
@@ -936,8 +984,6 @@ class Vocal extends Model
             }
             else
             {
-                $records = array();
-
                 foreach ($data[$relationship] as $index => $relationData)
                 {
                     // Find or create record
@@ -948,11 +994,11 @@ class Vocal extends Model
                     if ( ! $result) $relationErrors->add($index, $record->errors);
 
                     // Validate children if we have some
-                    $relationRelationships = $record->getRelationships($relationData);
+                    $relationRelationships = $record->getRelationships($relationData, $relationConditions);
 
                     if (count($relationRelationships))
                     {
-                        $relationshipResult = $record->validateRelations($relationRules, $relationMessages, $relationRelationships, $relationData);
+                        $relationshipResult = $record->validateRelations($relationConditions, $relationRules, $relationMessages, $relationRelationships, $relationData);
 
                         if ( ! $relationshipResult) $relationErrors->add($index, $record->errors);
                     }

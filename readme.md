@@ -144,6 +144,20 @@ This will validate and update the user and all their addresses in one swoop. If 
 
 This recursive action is not limited to AngularJS and can also be achieved with normal html forms. There is [an example](https://github.com/lakedawson/vocal/tree/master/examples/without-angular) on how to do this in the [examples directory](https://github.com/lakedawson/vocal/tree/master/examples).
 
+Of course, sometimes you will want to save only certain relationships rather than everything, `saveRecursive` and `validateRecursive` accept a `$conditions` parameter which can either be an array for `only` or `except`.
+
+If our user model has relationships of `addresses` and `orders` but we don't want to update all their orders on save, we can pass the `$conditions` to `saveRecursive`:
+
+```php
+public function save()
+{
+    $user = User::find(Input::get('id')) ?: new User;
+    $result = $user->saveRecursive(array('only' => array('addresses'))); // $user->saveRecursive(array('except' => array('orders'))); would work too!
+
+    return $user;
+}
+```
+
 
 <a name="hydration"></a>
 ## Auto Hydration
@@ -380,8 +394,14 @@ If validation failed for either `email.required` or `email.email` the custom lan
 
 You can override Vocal validation (and custom error messages) for a single call by passing `$rules` and/or `$messages` parameters to `Vocal->validate()`, `Vocal->validateRecursive()`, `Vocal->save()`, or `Vocal->saveRecursive()`.
 
-All functions take two parameters:
+`save` and `validate` methods take two parameters:
 
+- First parameter is `$rules`. This must be an array of Validator rules in the same form as they would be [defined in the model](#simple)
+- Second parameter is `$messages`. This must be an array of [custom validation messages](http://laravel.com/docs/validation#custom-error-messages)
+
+`saveRecursive` and `validateRecursive` methods take three parameters:
+
+- First parameter is `$conditions`. This must be an array of either `only` or `except` as outlined in the [recursive operation](#recursion) section
 - First parameter is `$rules`. This must be an array of Validator rules in the same form as they would be [defined in the model](#simple)
 - Second parameter is `$messages`. This must be an array of [custom validation messages](http://laravel.com/docs/validation#custom-error-messages)
 
