@@ -24,10 +24,12 @@ use Illuminate\Support\MessageBag;
  *
  * @property int $id
  * @method void afterCreate()
+ * @method void afterDelete()
  * @method void afterSave()
  * @method void afterUpdate()
  * @method void afterValidate()
  * @method void beforeCreate()
+ * @method void beforeDelete()
  * @method void beforeSave()
  * @method void beforeUpdate()
  * @method void beforeValidate()
@@ -375,7 +377,7 @@ class Vocal extends Model
      */
     public function forceSaveAndDelete($data = array(), Closure $before = null, Closure $after = null)
     {
-        $result = $this->forceSave();
+        $result = $this->forceSave($data, $before, $after);
 
         $this->delete();
 
@@ -398,6 +400,7 @@ class Vocal extends Model
     /**
      * Get data for a relationship
      *
+     * @param string $relationship
      * @param array $conditions
      * @param array $rules
      * @param array $messages
@@ -405,17 +408,24 @@ class Vocal extends Model
      */
     private function getRelationshipData($relationship, $conditions, $rules, $messages)
     {
-        // Determine model name
+        return array($this->getRelationshipDataFromArray($relationship, $conditions), $this->getRelationshipDataFromArray($relationship, $rules), $this->getRelationshipDataFromArray($relationship, $messages));
+    }
+
+    /**
+     * Extract data from a relationship array
+     *
+     * @param string $relationship
+     * @param array $data
+     * @return array
+     */
+    private function getRelationshipDataFromArray($relationship, $data)
+    {
+        // Determine model class
         $modelClass = Str::camel($relationship);
 
-        // Get conditions, rules and messages we will use
-        $relationConditions = $relationMessages = $relationRules = array();
+        if (isset($data[$relationship]) || isset($data[$modelClass])) return (isset($data[$relationship])) ? $data[$relationship] : $data[$modelClass];
 
-        if (isset($conditions[$relationship]) || isset($conditions[$modelClass])) $relationConditions = (isset($conditions[$relationship])) ? $conditions[$relationship] : $conditions[$modelClass];
-        if (isset($rules[$relationship]) || isset($rules[$modelClass]))           $relationRules = (isset($rules[$relationship])) ? $rules[$relationship] : $rules[$modelClass];
-        if (isset($messages[$relationship]) || isset($messages[$modelClass]))     $relationMessages = (isset($messages[$relationship])) ? $messages[$relationship] : $messages[$modelClass];
-
-        return array($relationConditions, $relationRules, $relationMessages);
+        return array();
     }
 
     /**
