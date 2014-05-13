@@ -36,7 +36,7 @@ class UserAddress extends Vocal
     /**
      * Join parent record (not really needed)
      *
-     * @return object
+     * @return Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function user()
     {

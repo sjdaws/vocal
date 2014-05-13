@@ -252,7 +252,7 @@ class Vocal extends Model
     /**
      * Delete a model
      *
-     * @return bool
+     * @return bool|null
      */
     public function delete()
     {
@@ -562,7 +562,7 @@ class Vocal extends Model
     /**
      * Create a sentence from random dictionary words
      *
-     * @param int $words [= 1]
+     * @param int $length [= 1]
      * @return string
      */
     public static function randomSentence($length = 1)
@@ -579,7 +579,6 @@ class Vocal extends Model
     /**
      * Remove any fields which can't be submitted to the database
      *
-     * @param array $data
      * @param return void
      */
     private function removeInvalidAttributes()
@@ -671,7 +670,7 @@ class Vocal extends Model
      * @param array $rules
      * @param array $messages
      * @param array $data
-     * @return int
+     * @return bool
      */
     public function saveRecursive($conditions = array(), $rules = array(), $messages = array(), $data = array(), Closure $before = null, Closure $after = null)
     {

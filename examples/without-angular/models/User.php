@@ -36,7 +36,7 @@ class User extends Vocal
     /**
      * Join addresses
      *
-     * @return object
+     * @return Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function addresses()
     {
