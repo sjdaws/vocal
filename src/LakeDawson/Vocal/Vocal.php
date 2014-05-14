@@ -803,7 +803,7 @@ class Vocal extends Model
 
                         if (count($relationRelationships))
                         {
-                            $relationshipResult = $result[$index]->saveRelations($relationRules, $relationMessages, $relationRelationships, $relationData);
+                            $relationshipResult = $result[$index]->saveRelations($relationConditions, $relationRules, $relationMessages, $relationRelationships, $relationData);
 
                             // Capture errors
                             if ( ! $relationshipResult) $relationErrors->add($index, $result[$index]->errors);
