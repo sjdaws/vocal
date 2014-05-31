@@ -29,9 +29,7 @@ class VocalServiceProvider extends ServiceProvider
 	 * @return void
 	 */
 	public function register()
-	{
-		//
-	}
+	{}
 
 	/**
 	 * Get the services provided by the provider
