@@ -13,9 +13,9 @@
     ],
     "require": {
         "php": ">=5.3.0",
-        "illuminate/database": "4.1.*",
-        "illuminate/hashing": "4.1.*",
-        "illuminate/support": "4.1.*"
+        "illuminate/database": "4.*",
+        "illuminate/hashing": "4.*",
+        "illuminate/support": "4.*"
     },
     "require-dev": {
         "orchestra/testbench": "2.1.*"
