@@ -83,6 +83,13 @@ class Vocal extends Model
     protected $hashAttributes = array();
 
     /**
+     * The folder which language files are stored in
+     *
+     * @var string
+     */
+    protected $languageFolder = 'validation';
+
+    /**
      * The rules to be applied to the data
      *
      * @var array
@@ -525,7 +532,7 @@ class Vocal extends Model
         if ( ! count($rules)) return;
 
         // Determine file for validation messages
-        $file = 'validation/' . str_replace('\\', '/', get_called_class()) . '.';
+        $file = $this->languageFolder . '/' . str_replace('\\', '/', get_called_class()) . '.';
 
         $messages = array();
 
