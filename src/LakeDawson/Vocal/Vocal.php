@@ -90,6 +90,13 @@ class Vocal extends Model
     protected $languageFolder = 'validation';
 
     /**
+     * The key within the language file where validation messages are stored
+     *
+     * @var string
+     */
+    protected $languageKey = null;
+
+    /**
      * The rules to be applied to the data
      *
      * @var array
@@ -546,11 +553,13 @@ class Vocal extends Model
             {
                 // Remove extra parameters if we have them
                 if (strpos($rule, ':')) $rule = current(explode(':', $rule));
+
                 $key = implode('.', array($field, $rule));
+                $fileKey = ($this->languageKey) ? $this->languageKey . '.' . $key : $key;
 
                 // We have a couple of options where language files could be saved,
                 // try: Model.php and model.php, as well as Model_Model.php and Model/Model.php
-                $attempts = array($file . $key, Str::lower($file) . $key, str_replace('_', '/', $file) . $key, Str::lower(str_replace('_', '/', $file)) . $key);
+                $attempts = array($file . $fileKey, Str::lower($file) . $fileKey, str_replace('_', '/', $file) . $fileKey, Str::lower(str_replace('_', '/', $file)) . $fileKey);
 
                 foreach ($attempts as $attempt)
                 {
