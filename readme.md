@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/lakedawson/vocal.png)](https://travis-ci.org/lakedawson/vocal) [![License](https://poser.pugx.org/lakedawson/vocal/license.png)](https://packagist.org/packages/lakedawson/vocal) [![Latest Stable Version](https://poser.pugx.org/lakedawson/vocal/version.png)](https://packagist.org/packages/lakedawson/vocal)
 
-Extended functionality for Eloquent in Laravel 4.1
+Extended functionality for Eloquent in Laravel 4.1+
 
 A big chunk of Vocal is based on [Ardent](https://github.com/laravelbook/ardent) for Laravel 4 by Max Ehsan.
 
@@ -51,7 +51,7 @@ The first thing you need to do is add `lakedawson/vocal` as a requirement to `co
 ```javascript
 {
     "require": {
-        "lakedawson/vocal": "0.1.*"
+        "lakedawson/vocal": "0.2.*"
     }
 }
 ```
