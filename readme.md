@@ -1,12 +1,12 @@
 # Vocal
 
-[![Build Status](https://travis-ci.org/lakedawson/vocal.png)](https://travis-ci.org/lakedawson/vocal) [![License](https://poser.pugx.org/lakedawson/vocal/license.png)](https://packagist.org/packages/lakedawson/vocal) [![Latest Stable Version](https://poser.pugx.org/lakedawson/vocal/version.png)](https://packagist.org/packages/lakedawson/vocal)
+[![Build Status](https://travis-ci.org/sjdaws/vocal.png)](https://travis-ci.org/sjdaws/vocal) [![License](https://poser.pugx.org/sjdaws/vocal/license.png)](https://packagist.org/packages/sjdaws/vocal) [![Latest Stable Version](https://poser.pugx.org/sjdaws/vocal/version.png)](https://packagist.org/packages/sjdaws/vocal)
 
 Extended functionality for Eloquent in Laravel 4.1+
 
 A big chunk of Vocal is based on [Ardent](https://github.com/laravelbook/ardent) for Laravel 4 by Max Ehsan.
 
-Copyright (c) 2014 Lake Dawson Software <[https://lakedawson.com/](https://lakedawson.com/)>
+Copyright (c) 2014 Scott Dawson
 
 
 ## Documentation
@@ -46,12 +46,12 @@ Vocal is a recursive, self-validating extension for Eloquent. It works much the 
 <a name="install"></a>
 ## Installation
 
-The first thing you need to do is add `lakedawson/vocal` as a requirement to `composer.json`:
+The first thing you need to do is add `sjdaws/vocal` as a requirement to `composer.json`:
 
 ```javascript
 {
     "require": {
-        "lakedawson/vocal": "0.2.*"
+        "sjdaws/vocal": "0.2.*"
     }
 }
 ```
@@ -67,7 +67,7 @@ Vocal extends the Eloquent base class, so your models are still fully compatible
 To create a new Vocal model, simply make your model class extend the Vocal base class:
 
 ```php
-use LakeDawson\Vocal\Vocal;
+use Sjdaws\Vocal\Vocal;
 
 class User extends Vocal {}
 ```
@@ -75,7 +75,7 @@ class User extends Vocal {}
 Alternatively you could just create a single Base model that extends Vocal and make everything else extend your Base model. This makes it easier to switch between Vocal, Eloquent and Ardent and doesn't require a `use` statement inside each model.
 
 ```php
-use LakeDawson\Vocal\Vocal;
+use Sjdaws\Vocal\Vocal;
 
 class Base extends Vocal {}
 ```
@@ -142,7 +142,7 @@ public function save()
 
 This will validate and update the user and all their addresses in one swoop. If the validation was unsuccessful for the `$user` object, or any of the addresses, we will have all the <a href="#errors">errors stored our `$user` object</a> and `$result` will be false. If everything was successfully validated and updated `Vocal->errors()` will be empty and `$result` will be true.
 
-This recursive action is not limited to AngularJS and can also be achieved with normal html forms. There is [an example](https://github.com/lakedawson/vocal/tree/master/examples/without-angular) on how to do this in the [examples directory](https://github.com/lakedawson/vocal/tree/master/examples).
+This recursive action is not limited to AngularJS and can also be achieved with normal html forms. There is [an example](https://github.com/sjdaws/vocal/tree/master/examples/without-angular) on how to do this in the [examples directory](https://github.com/sjdaws/vocal/tree/master/examples).
 
 Of course, sometimes you will want to save only certain relationships rather than everything, `saveRecursive` and `validateRecursive` accept a `$conditions` parameter which can either be an array for `only` or `except`.
 
@@ -458,7 +458,7 @@ class User extends Vocal
 }
 ```
 
-As of [v0.1.14](https://github.com/lakedawson/vocal/releases/tag/v0.1.14) Vocal no longer uses listeners by default for hooks, but rather uses direct calls. The performance benefits of this can be outstanding, here is an example of migrating 3085 records from one database to another, there is a hook to `beforeCreate` to ensure each record has a `send_at` timestamp.
+As of [v0.1.14](https://github.com/sjdaws/vocal/releases/tag/v0.1.14) Vocal no longer uses listeners by default for hooks, but rather uses direct calls. The performance benefits of this can be outstanding, here is an example of migrating 3085 records from one database to another, there is a hook to `beforeCreate` to ensure each record has a `send_at` timestamp.
 
 ```php
 class MaillistEmail extends Base

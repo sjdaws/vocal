@@ -1,9 +1,9 @@
 <?php
 
-namespace LakeDawson\Tests;
+namespace Sjdaws\Tests;
 
-use LakeDawson\Tests\Models\Test;
-use LakeDawson\Tests\Models\TestChild;
+use Sjdaws\Tests\Models\Test;
+use Sjdaws\Tests\Models\TestChild;
 
 class TestCase extends \Orchestra\Testbench\TestCase
 {

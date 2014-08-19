@@ -1,8 +1,8 @@
 <?php
 
-namespace LakeDawson\Tests\Models;
+namespace Sjdaws\Tests\Models;
 
-use LakeDawson\Vocal\Vocal;
+use Sjdaws\Vocal\Vocal;
 
 class TestChild extends Vocal
 {
@@ -33,6 +33,6 @@ class TestChild extends Vocal
      */
     public function parent()
     {
-        return $this->belongsTo('LakeDawson\Tests\Models\Test', 'test_id');
+        return $this->belongsTo('Sjdaws\Tests\Models\Test', 'test_id');
     }
 }

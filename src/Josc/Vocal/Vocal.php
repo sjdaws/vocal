@@ -1,6 +1,6 @@
 <?php
 
-namespace LakeDawson\Vocal;
+namespace Sjdaws\Vocal;
 
 use Closure;
 use Illuminate\Database\Eloquent\Model;
@@ -108,7 +108,7 @@ class Vocal extends Model
      *
      * @var bool
      */
-    protected $useHookListeners = false;
+    protected static $useHookListeners = false;
 
     /**
      * Determine whether the model has been hydrated
@@ -128,7 +128,7 @@ class Vocal extends Model
      * Create a new model instance
      *
      * @param array $attributes
-     * @return LakeDawson\Vocal\Vocal
+     * @return Sjdaws\Vocal\Vocal
      */
     public function __construct(array $attributes = array())
     {
@@ -150,6 +150,9 @@ class Vocal extends Model
     public static function boot()
     {
         parent::boot();
+
+        // Don't add hooks if we aren't using them
+        if ( ! self::$useHookListeners) return;
 
         $hooks    = array('before' => 'ing', 'after' => 'ed');
         $radicals = array('sav', 'validat', 'creat', 'updat', 'delet');

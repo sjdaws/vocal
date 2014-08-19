@@ -1,6 +1,6 @@
 <?php
 
-namespace LakeDawson\Vocal;
+namespace Sjdaws\Vocal;
 
 use Illuminate\Support\ServiceProvider;
 
@@ -20,7 +20,7 @@ class VocalServiceProvider extends ServiceProvider
 	 */
 	public function boot()
 	{
-		$this->package('lakedawson/vocal');
+		$this->package('sjdaws/vocal');
 	}
 
 	/**

@@ -1,8 +1,8 @@
 <?php
 
-namespace LakeDawson\Tests\Models;
+namespace Sjdaws\Tests\Models;
 
-use LakeDawson\Vocal\Vocal;
+use Sjdaws\Vocal\Vocal;
 
 class Test extends Vocal
 {
@@ -40,6 +40,6 @@ class Test extends Vocal
      */
     public function children()
     {
-        return $this->hasMany('LakeDawson\Tests\Models\TestChild', 'test_id');
+        return $this->hasMany('Sjdaws\Tests\Models\TestChild', 'test_id');
     }
 }

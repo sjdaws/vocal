@@ -1,6 +1,6 @@
 <?php
 
-use LakeDawson\Vocal\Vocal;
+use Sjdaws\Vocal\Vocal;
 
 class User extends Vocal
 {
