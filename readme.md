@@ -6,7 +6,7 @@ Extended functionality for Eloquent in Laravel 4.1+
 
 A big chunk of Vocal is based on [Ardent](https://github.com/laravelbook/ardent) for Laravel 4 by Max Ehsan.
 
-Copyright (c) 2014 Scott Dawson
+Copyright (c) 2014 [Scott Dawson](https://github.com/sjdaws).
 
 
 ## Documentation
