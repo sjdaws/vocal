@@ -55,6 +55,13 @@ class Vocal extends Model
     protected $diff = array();
 
     /**
+     * Fields to ignore when comparing diff
+     *
+     * @var array
+     */
+    protected $diffIgnore = array();
+
+    /**
      * The message bag instance containing validation error messages
      *
      * @var Illuminate\Support\MessageBag
@@ -296,8 +303,8 @@ class Vocal extends Model
         // Compare each attribute
         foreach ($attributes as $key => $value)
         {
-            // Skip vocal internal keys
-            if ($key == '_hydratedByVocal' || $key == '_validatedByVocal') continue;
+            // Skip vocal internal keys or ignored keys
+            if ($key == '_hydratedByVocal' || $key == '_validatedByVocal' || in_array($key, $this->diffIgnore)) continue;
 
             if ($new) $this->diff[$key] = array('new'  => $value);
             else if ($value != $this->$key)
@@ -617,11 +624,14 @@ class Vocal extends Model
      */
     public function save(array $rules = array(), $messages = array(), $data = array(), Closure $before = null, Closure $after = null)
     {
+        // Preserve whether this is a new or existing model
+        $exists = $this->exists;
+
         if ( ! $this->useHookListeners)
         {
             // Run hooks, and abort if false is returned
-            if (method_exists(get_called_class(), 'beforeCreate') && ! $this->exists) if ($this->beforeCreate() === false) return false;
-            if (method_exists(get_called_class(), 'beforeUpdate') && $this->exists) if ($this->beforeUpdate() === false) return false;
+            if (method_exists(get_called_class(), 'beforeCreate') && ! $exists) if ($this->beforeCreate() === false) return false;
+            if (method_exists(get_called_class(), 'beforeUpdate') && $exists) if ($this->beforeUpdate() === false) return false;
             if (method_exists(get_called_class(), 'beforeSave')) if ($this->beforeSave() === false) return false;
         }
 
@@ -655,8 +665,8 @@ class Vocal extends Model
 
         if ( ! $this->useHookListeners)
         {
-            if (method_exists(get_called_class(), 'afterCreate') && ! $this->exists) $this->afterCreate();
-            if (method_exists(get_called_class(), 'afterUpdate') && $this->exists) $this->afterUpdate();
+            if (method_exists(get_called_class(), 'afterCreate') && ! $exists) $this->afterCreate();
+            if (method_exists(get_called_class(), 'afterUpdate') && $exists) $this->afterUpdate();
             if (method_exists(get_called_class(), 'afterSave')) $this->afterSave();
         }
 
