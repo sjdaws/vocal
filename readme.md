@@ -2,9 +2,6 @@
 
 [![Build Status](https://travis-ci.org/sjdaws/vocal.png)](https://travis-ci.org/sjdaws/vocal) [![License](https://poser.pugx.org/sjdaws/vocal/license.png)](https://packagist.org/packages/sjdaws/vocal) [![Latest Stable Version](https://poser.pugx.org/sjdaws/vocal/version.png)](https://packagist.org/packages/sjdaws/vocal)
 
-> Want Vocal functionality in Laravel 5? Due to structural/responsbility changes in Laravel 5, Vocal is now two packages.
-> [Enforcer](https://github.com/sjdaws/enforcer) provides validation functionality such as i8n validation messages and [SuperModel](https://github.com/sjdaws/supermodel) provides model functionality such as recursive operation.
-
 Extended functionality for Eloquent in Laravel 4.1+
 
 A big chunk of Vocal is based on [Ardent](https://github.com/laravelbook/ardent) for Laravel 4 by Max Ehsan.
