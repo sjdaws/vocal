@@ -29,7 +29,7 @@ class UserController extends BaseController
     /**
      * Save a user
      *
-     * @return Redirect|View
+     * @return string
      */
     public function save()
     {
