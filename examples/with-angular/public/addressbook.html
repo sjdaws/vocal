@@ -1,0 +1,23 @@
+<form name="form.data" data-ng-submit="save()">
+    <input type="hidden" name="id" value="{{ user.id }}">
+    <label for="username">Username</label>
+        <input type="text" data-ng-model="user.username" id="username" value="{{ user.username }}"><br>
+    <label for="email">Email</label>
+        <input type="text" data-ng-model="user.email" id="email" value="{{ user.email }}"><br>
+
+    <br><br><br>
+
+    <div data-ng-repeat="address in user.addresses">
+        <h2>Address {{ $index }} (ID: {{ '#' + address.id || 'New' }})</h2>
+        <label for="address-{{ $index }}">Address</label>
+            <input type="text" data-ng-model="address.address" id="address-{{ $index }}" value="{{ address.address }}"><br>
+        <label for="city-{{ $index }}">City</label>
+            <input type="text" data-ng-model="address.city" id="city-{{ $index }}" value="{{ address.city }}"><br>
+        <hr>
+    </div>
+
+    <br><br><br>
+
+    <button data-ng-click="add()" type="button">Another address</button>
+    <input type="submit">
+</form>
