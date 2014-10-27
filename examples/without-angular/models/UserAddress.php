@@ -16,7 +16,7 @@ class UserAddress extends Vocal
      *
      * @var array
      */
-    public $rules = array(
+    protected $rules = array(
         'address' => array('required', 'unique'),
         'city'    => array('required')
     );

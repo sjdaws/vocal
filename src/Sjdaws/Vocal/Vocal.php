@@ -12,7 +12,6 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Database\Eloquent\SoftDeletingTrait;
 use Illuminate\Hashing\BcryptHasher;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Lang;
@@ -41,8 +40,6 @@ use Illuminate\Support\MessageBag;
 
 class Vocal extends Model
 {
-    use SoftDeletingTrait;
-
     /**
      * The dataset we're currently validating
      *

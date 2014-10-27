@@ -5,7 +5,7 @@
     @foreach ($errors as $relationship => $error)
         @if (is_array($error))
             @foreach ($error as $index => $message)
-                {{ $relationship }} #{{ $index }}:
+                {{ $relationship }} #{{ $index }}: 
                 @foreach ($message as $field => $description)
                     {{ $field }} -> {{ $description }}
                 @endforeach
@@ -22,7 +22,7 @@
 @endif
 
 {{ Form::model($user, array('route' => array('user.save', $user->id))) }}
-
+    
     {{ Form::hidden('id', $user->id) }}
     {{ Form::label('username', 'Username') }} {{ Form::text('username') }}<br>
     {{ Form::label('email', 'Email') }} {{ Form::text('email') }}<br>

@@ -16,7 +16,7 @@ class User extends Vocal
      *
      * @var array
      */
-    public $rules = array(
+    protected $rules = array(
         'username' => array('required', 'unique'),
         'email'    => array('required', 'unique', 'email')
     );
