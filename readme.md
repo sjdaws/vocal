@@ -58,6 +58,8 @@ The first thing you need to do is add `sjdaws/vocal` as a requirement to `compos
 
 Update your packages with `composer update` and you're ready to go.
 
+> If you get an error when using `withTrashed()`, or Vocal won't install, use `0.3.*` as the version instead. `0.3.*` uses the `SoftDeletingTrait` instead of `$softDeletes` directly in the model.
+
 
 <a name="start"></a>
 ## Getting Started
