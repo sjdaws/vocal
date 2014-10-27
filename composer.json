@@ -1,6 +1,6 @@
 {
     "name": "sjdaws/vocal",
-    "description": "Extended functionality for Eloquent in Laravel 4.1+",
+    "description": "Extended functionality for Eloquent in Laravel 4.2+",
     "version": "0.2.4",
     "type": "library",
     "license": "MIT",
@@ -12,13 +12,13 @@
         }
     ],
     "require": {
-        "php": ">=5.3.0",
-        "illuminate/database": ">=4.1",
-        "illuminate/hashing": ">=4.1",
-        "illuminate/support": ">=4.1"
+        "php": ">=5.4.0",
+        "illuminate/database": ">=4.2",
+        "illuminate/hashing": ">=4.2",
+        "illuminate/support": ">=4.2"
     },
     "require-dev": {
-        "orchestra/testbench": "2.1.*"
+        "orchestra/testbench": "2.2.*"
     },
     "repositories": [
         {
