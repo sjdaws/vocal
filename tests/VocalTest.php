@@ -156,5 +156,22 @@ class TestCase extends \Orchestra\Testbench\TestCase
         $this->assertTrue($result, $this->errorResponse('Record was not saved', $test));
 
         $this->assertTrue($test->password && $test->password != $input->get('password'), $this->errorResponse('Record was not saved', $test));
+
+        // Test that the inverse relationship (belongsTo) works
+        $input->replace(array(
+            'description' => 'Child 3',
+            'parent' => array(
+                'description' => 'Parent 2',
+            )
+        ));
+
+        $child = new TestChild;
+        $result = $child->saveRecursive();
+
+        // Make sure validation passed
+        $this->assertTrue($result, $this->errorResponse('Record was not saved', $child));
+
+        // Make sure the parent has an ID (that means it was actually saved)
+        $this->assertTrue(!!$child->parent->id, true);
     }
 }
