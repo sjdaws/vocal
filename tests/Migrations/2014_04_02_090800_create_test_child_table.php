@@ -22,7 +22,7 @@ class CreateTestChildTable extends Migration
 		Schema::create($this->table, function($t)
 		{
 			$t->increments('id')->unsigned();
-			$t->integer('test_id')->unsigned();
+			$t->integer('test_id')->unsigned()->nullable();
 			$t->string('description', 100);
 			$t->timestamps();
         });
