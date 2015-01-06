@@ -390,6 +390,24 @@ class Vocal extends Model
     }
 
     /**
+     * Find or create a record
+     *
+     * @param Model $model
+     * @param string $key
+     * @return Model
+     */
+    private function findOrCreateRecord($model, $key = null)
+    {
+        if ($key)
+        {
+            return (isset($this->forceDeleting) && ! $this->forceDeleting) ?
+                    $model->withTrashed()->find($key) :
+                    $model->find($key);
+        }
+        else return new $model;
+    }
+
+    /**
      * Save a model regardless of validation result
      *
      * @param array $data
@@ -774,7 +792,7 @@ class Vocal extends Model
             if ($type == 'one')
             {
                 // Find or create record
-                $record = (isset($data[$relationship][$key])) ? $model->withTrashed()->find($data[$relationship][$key]) : new $model;
+                $record = $this->findOrCreateRecord($model, isset($data[$relationship][$key]) ? $data[$relationship][$key] : null);
 
                 // Validate
                 $result = $record->validate($relationRules, $relationMessages, $data[$relationship]);
@@ -783,7 +801,6 @@ class Vocal extends Model
                 if ($result)
                 {
                     if (method_exists($this->$modelClass(), 'associate')) {
-
                         // we must save the record first before associating it
                         $record->forceSave();
                         $this->$modelClass()->associate($record)->forceSave();
@@ -808,7 +825,7 @@ class Vocal extends Model
                 foreach ($data[$relationship] as $index => $relationData)
                 {
                     // Find or create record
-                    $record = (isset($relationData[$key])) ? $model->withTrashed()->find($relationData[$key]) : new $model;
+                    $record = $this->findOrCreateRecord($model, isset($relationData[$key]) ? $relationData[$key] : null);
 
                     // Validate
                     $result = $record->validate($relationRules, $relationMessages, $relationData);
@@ -1037,7 +1054,7 @@ class Vocal extends Model
             if ($type == 'one')
             {
                 // Find or create record
-                $record = (isset($data[$relationship][$key])) ? $model->withTrashed()->find($data[$relationship][$key]) : new $model;
+                $record = $this->findOrCreateRecord($model, isset($data[$relationship][$key]) ? $data[$relationship][$key] : null);
 
                 // Validate and capture errors
                 $result = $record->validate($relationRules, $relationMessages, $data[$relationship]);
@@ -1048,7 +1065,7 @@ class Vocal extends Model
                 foreach ($data[$relationship] as $index => $relationData)
                 {
                     // Find or create record
-                    $record = (isset($relationData[$key])) ? $model->withTrashed()->find($relationData[$key]) : new $model;
+                    $record = $this->findOrCreateRecord($model, isset($relationData[$key]) ? $relationData[$key] : null);
 
                     // Validate and capture errors
                     $result = $record->validate($relationRules, $relationMessages, $relationData);
