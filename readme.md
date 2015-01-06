@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/sjdaws/vocal.png)](https://travis-ci.org/sjdaws/vocal) [![License](https://poser.pugx.org/sjdaws/vocal/license.png)](https://packagist.org/packages/sjdaws/vocal) [![Latest Stable Version](https://poser.pugx.org/sjdaws/vocal/version.png)](https://packagist.org/packages/sjdaws/vocal)
 
-Extended functionality for Eloquent in Laravel 4.1+
+Extended functionality for Eloquent in Laravel 4
 
 A big chunk of Vocal is based on [Ardent](https://github.com/laravelbook/ardent) for Laravel 4 by Max Ehsan.
 
@@ -51,14 +51,12 @@ The first thing you need to do is add `sjdaws/vocal` as a requirement to `compos
 ```javascript
 {
     "require": {
-        "sjdaws/vocal": "0.2.*"
+        "sjdaws/vocal": "1.0.*"
     }
 }
 ```
 
 Update your packages with `composer update` and you're ready to go.
-
-> If you get an error when using `withTrashed()`, or Vocal won't install, use `0.3.*` as the version instead. `0.3.*` uses the `SoftDeletingTrait` instead of `$softDeletes` directly in the model.
 
 
 <a name="start"></a>
