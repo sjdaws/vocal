@@ -400,11 +400,15 @@ class Vocal extends Model
     {
         if ($key)
         {
-            return (isset($this->forceDeleting) && ! $this->forceDeleting) ?
+            $record = (isset($this->forceDeleting) && ! $this->forceDeleting) ?
                     $model->withTrashed()->find($key) :
                     $model->find($key);
+
+            // If we didn't find anything we're going to return a new record
+            if ( $record) return $record;
         }
-        else return new $model;
+
+        return new $model;
     }
 
     /**
