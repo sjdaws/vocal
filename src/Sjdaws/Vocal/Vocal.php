@@ -274,6 +274,20 @@ class Vocal extends Model
     }
 
     /**
+     * Save a new model and return the instance
+     *
+     * @param array $attributes
+     * @return static
+     */
+    public static function create(array $attributes = array())
+    {
+        $model = new static;
+        $model->saveRecursive(array(), array(), array(), $attributes);
+
+        return $model;
+    }
+
+    /**
      * Delete a model
      *
      * @return bool|null
@@ -405,7 +419,7 @@ class Vocal extends Model
                     $model->find($key);
 
             // If we didn't find anything we're going to return a new record
-            if ( $record) return $record;
+            if ($record) return $record;
         }
 
         return new $model;

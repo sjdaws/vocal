@@ -26,6 +26,7 @@ Copyright (c) 2014 [Scott Dawson](https://github.com/sjdaws).
 * [Diff Determination](#diff)
 * [Timestamps](#timestamp)
 * [Save And Delete](#sandd)
+* [Create](#create)
 * [Random Word Generator](#random)
 
 
@@ -601,6 +602,12 @@ $user->blocked_until = $user->timestamp('2014-08-16'); // Will be 16th August, 2
 ## Save and Delete
 
 When working with soft deletes, sometimes you want to save some information to a model before you soft delete it. Vocal provides this with `saveAndDelete` and `forceSaveAndDelete` methods. These methods accept the same parameters as `save` and `forceSave`.
+
+
+<a name="create"></a>
+## Create
+
+Vocal overloads Laravel's [`create` method](http://laravel.com/docs/4.2/eloquent#insert-update-delete) to allow you to create models recursively, with validation via hydrated input in a single call. You can simply call `create` statically, you can either pass an array of data or let it [hydrate automatically](#hydration) by passing nothing.
 
 
 <a name="random"></a>

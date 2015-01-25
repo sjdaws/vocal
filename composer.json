@@ -1,7 +1,7 @@
 {
     "name": "sjdaws/vocal",
     "description": "Extended functionality for Eloquent in Laravel 4",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "type": "library",
     "license": "MIT",
     "keywords": ["laravel", "eloquent", "orm", "activerecord", "recursive", "hydration", "validation", "angular", "angularjs"],

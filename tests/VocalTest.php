@@ -114,6 +114,23 @@ class TestCase extends \Orchestra\Testbench\TestCase
         // Check child records
         foreach ($test->children as $child) $this->assertTrue(strpos($child->description, 'Child') === 0, $this->errorResponse('Child record was not saved correctly', $child));
 
+        // Test create method
+        $input->replace(array(
+            'description' => 'Parent B',
+            'children'    => array(
+                array('description' => 'Child 1a'),
+                array('description' => 'Child 2a'),
+            )
+        ));
+
+        $test2 = Test::create();
+
+        // Make sure we have children
+        $this->assertTrue(count($test2->children) > 0, $this->errorResponse('Child records was not created', $test2));
+
+        // Check child records
+        foreach ($test2->children as $child) $this->assertTrue(strpos($child->description, 'Child') === 0, $this->errorResponse('Child record was not saved correctly', $child));
+
         // Update second relationship and save again
         $input->replace(array(
             'id'          => 1,
