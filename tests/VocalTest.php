@@ -2,35 +2,12 @@
 
 namespace Sjdaws\Tests;
 
+use Orchestra\Testbench\TestCase;
 use Sjdaws\Tests\Models\Test;
 use Sjdaws\Tests\Models\TestChild;
 
-class TestCase extends \Orchestra\Testbench\TestCase
+class Tests extends TestCase
 {
-    /**
-     * Standardise error responses
-     *
-     * @param string $string
-     * @param object $model
-     * @return string
-     */
-    protected function errorResponse($string, $model)
-    {
-        $error = $string . ': ';
-
-        if (is_object($model))
-        {
-            // If we have errors, add them in
-            if (count($model->errors())) $error .= print_r($model->errors(), true);
-
-            // Add model in so we can see where we went wrong
-            $error .= print_r($model->toArray(), true);
-        }
-        else $error .= $model;
-
-        return $error;
-    }
-
     /**
      * Define environment setup
      *
@@ -60,13 +37,12 @@ class TestCase extends \Orchestra\Testbench\TestCase
     {
         parent::setUp();
 
-        // Turn off query log
-        $db = $this->app->make('db');
-        $db->connection()->disableQueryLog();
+        // Turn off query log to save memory
+        $this->app->make('Illuminate\Database\DatabaseManager')->connection()->disableQueryLog();
 
         // Migrate fresh copy of database
-        $artisan = $this->app->make('artisan');
-        $artisan->call('migrate', array('--database' => 'testbench', '--path' => '../tests/Migrations'));
+        $artisan = (class_exists('Illuminate\Contracts\Console\Kernel')) ? 'Illuminate\Contracts\Console\Kernel' : 'artisan';
+        $this->app->make($artisan)->call('migrate', array('--database' => 'testbench', '--path' => '../tests/Migrations'));
     }
 
     /**
@@ -78,7 +54,7 @@ class TestCase extends \Orchestra\Testbench\TestCase
     {
         $input = $this->app->make('request');
 
-        // Create a record with some children
+        // Create a record with some children, one of which is invalid
         $input->replace(array(
             'description' => 'Parent',
             'children'    => array(
@@ -86,12 +62,11 @@ class TestCase extends \Orchestra\Testbench\TestCase
                 array('description' => ''),
             )
         ));
-
         $test = new Test;
         $result = $test->validateRecursive();
 
         // Make sure validation failed due to second child not having a description
-        $this->assertFalse($result, $this->errorResponse('Validation should have failed', $test));
+        $this->assertFalse($result, 'Validation on $test should have failed');
 
         // Fix error and attempt to save
         $input->replace(array(
@@ -103,16 +78,16 @@ class TestCase extends \Orchestra\Testbench\TestCase
         ));
 
         $test = new Test;
-        $result = $test->saveRecursive();
+        $result = $test->saveRecursive($input->all());
 
         // Make sure validation passed
-        $this->assertTrue($result, $this->errorResponse('Record was not saved', $test));
+        $this->assertTrue($result, '$test was not created');
 
         // Make sure we have children
-        $this->assertTrue(count($test->children) > 0, $this->errorResponse('Child records was not created', $test));
+        $this->assertTrue(count($test->children) > 0, '$test children were not created');
 
         // Check child records
-        foreach ($test->children as $child) $this->assertTrue(strpos($child->description, 'Child') === 0, $this->errorResponse('Child record was not saved correctly', $child));
+        foreach ($test->children as $child) $this->assertTrue(strpos($child->description, 'Child') === 0, '$test children were not saved correctly');
 
         // Test create method
         $input->replace(array(
@@ -126,10 +101,10 @@ class TestCase extends \Orchestra\Testbench\TestCase
         $test2 = Test::create();
 
         // Make sure we have children
-        $this->assertTrue(count($test2->children) > 0, $this->errorResponse('Child records was not created', $test2));
+        $this->assertTrue(count($test2->children) > 0, '$test2 children were not created');
 
         // Check child records
-        foreach ($test2->children as $child) $this->assertTrue(strpos($child->description, 'Child') === 0, $this->errorResponse('Child record was not saved correctly', $child));
+        foreach ($test2->children as $child) $this->assertTrue(strpos($child->description, 'Child') === 0, '$test2 children were not saved correctly');
 
         // Update second relationship and save again
         $input->replace(array(
@@ -141,24 +116,25 @@ class TestCase extends \Orchestra\Testbench\TestCase
             )
         ));
 
-        $result = $test->saveRecursive();
+        $test3 = clone $test;
+        $result = $test3->saveRecursive();
 
         // Check save was successful
-        $this->assertTrue($result, $this->errorResponse('Record was not updated', $test));
+        $this->assertTrue($result, '$test3 was not updated');
 
         // Make sure child was updated
-        $this->assertTrue($test->children[1]->description == 'Child X', $this->errorResponse('Child record was not updated correctly', $test->children[1]));
+        $this->assertTrue($test3->children[1]->description == 'Child X', '$test3 were not updated correctly');
 
         // Test saving non-recursive
         $input->replace(array(
             'description' => 'Non-recursive'
         ));
 
-        $test = new Test;
-        $result = $test->save();
+        $test4 = new Test;
+        $result = $test4->save();
 
         // Check save was successful
-        $this->assertTrue($result, $this->errorResponse('Record was not saved', $test));
+        $this->assertTrue($result, '$test4 was not created');
 
         // Test hashes
         $input->replace(array(
@@ -166,13 +142,13 @@ class TestCase extends \Orchestra\Testbench\TestCase
             'password'    => 'password'
         ));
 
-        $test = new Test;
-        $result = $test->save();
+        $test5 = new Test;
+        $result = $test5->save();
 
         // Check save was successful
-        $this->assertTrue($result, $this->errorResponse('Record was not saved', $test));
-
-        $this->assertTrue($test->password && $test->password != $input->get('password'), $this->errorResponse('Record was not saved', $test));
+        $this->assertTrue($result, '$test5 was not created');
+        $this->assertTrue($test5->password && $test5->password != $input->get('password'), '$test5 was not saved correctly');
+        $this->assertTrue($test5->password != $input->get('password'), 'Password for $test5 was not hashed');
 
         // Test that the inverse relationship (belongsTo) works
         $input->replace(array(
@@ -182,13 +158,13 @@ class TestCase extends \Orchestra\Testbench\TestCase
             )
         ));
 
-        $child = new TestChild;
-        $result = $child->saveRecursive();
+        $test6 = new TestChild;
+        $result = $test6->saveRecursive();
 
         // Make sure validation passed
-        $this->assertTrue($result, $this->errorResponse('Record was not saved', $child));
+        $this->assertTrue($result, '$test6 was not created');
 
         // Make sure the parent has an ID (that means it was actually saved)
-        $this->assertTrue(!!$child->parent->id, true);
+        $this->assertTrue( !! $test6->parent->id, 'Parent ID can not be found via $test6 child record');
     }
 }
