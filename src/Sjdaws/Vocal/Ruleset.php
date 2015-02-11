@@ -77,6 +77,21 @@ class Ruleset
     }
 
     /**
+     * Merge an array from an index point
+     *
+     * @param  array   $to
+     * @param  array   $from
+     * @param  integer $index
+     * @return array
+     */
+    private function mergeArrayFromIndex(array $to, array $from, $index = 0)
+    {
+        if (count($from) > $index) for ($i = $index; $i < count($from); ++$i) $to[] = $from[$i];
+
+        return $to;
+    }
+
+    /**
      * Parse rule parameters
      *
      * @param  string|array $parameters
@@ -126,10 +141,8 @@ class Ruleset
             $this->useParameterIfSet($parameters, 3, (isset($this->model->primaryKey)) ? $this->model->primaryKey : 'id')
         );
 
-        // If we have exactly 6 parameters then we use the where clause field to fill the exclusion
-        if (count($parameters) > 4) for ($i = 4; $i < count($parameters); ++$i) $rule[] = $parameters[$i];
-
-        return $rule;
+        // Merge in any other parameters we have
+        return $this->mergeArrayFromIndex($rule, $parameters, 4);
     }
 
     /**
@@ -171,6 +184,6 @@ class Ruleset
      */
     private function useParameterIfSet($parameters, $index, $default = null)
     {
-        return (isset($parameters[$index])) ? $parameters[$index] : $default;
+        if (isset($parameters[$index])) ? $parameters[$index] : $default;
     }
 }
