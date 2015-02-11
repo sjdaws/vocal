@@ -19,7 +19,8 @@ use Illuminate\Support\Str;
 use Illuminate\Support\MessageBag;
 
 /**
- * @property int $id
+ * @property int    $id
+ * @property string $primaryKey
  */
 class Vocal extends Model
 {
