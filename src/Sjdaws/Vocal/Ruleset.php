@@ -18,7 +18,6 @@ class Ruleset
      *
      * @param  Model $model
      * @param  array $rules
-     * @return Sjdaws\Vocal\Ruleset
      */
     public function __construct($model, array $rules = array())
     {
@@ -119,28 +118,13 @@ class Ruleset
         // If we have a unique rule, make sure it's built correctly
         if ($type != 'unique') return $parameters;
 
-        // Construct unique rule
-        $rule = array();
-
-        // Table first
-        if (isset($parameters[0])) $rule[] = $parameters[0];
-        else $rule[] = $this->model->getTable();
-
-        // Field name second
-        if (isset($parameters[1])) $rule[] = $parameters[1];
-        else $rule[] = $field;
-
-        // Make sure we ignore the current record
-        if (isset($this->model->primaryKey))
-        {
-            $rule[] = (isset($parameters[2])) ? $parameters[2] : $this->model->{$this->model->primaryKey};
-            $rule[] = (isset($parameters[3])) ? $parameters[3] : $this->model->primaryKey;
-        }
-        else
-        {
-            $rule[] = (isset($parameters[2])) ? $parameters[2] : $this->model->id;
-            $rule[] = (isset($parameters[3])) ? $parameters[3] : 'id';
-        }
+        // Construct unique rule correctly
+        $rule = array(
+            $this->useParameterIfSet($parameters, 0, $this->model->getTable()),
+            $this->useParameterIfSet($parameters, 1, $field),
+            $this->useParameterIfSet($parameters, 2, (isset($this->model->primaryKey)) ? $this->model->{$this->model->primaryKey} : $this->model->id),
+            $this->useParameterIfSet($parameters, 3, (isset($this->model->primaryKey)) ? $this->model->primaryKey : 'id')
+        );
 
         // If we have exactly 6 parameters then we use the where clause field to fill the exclusion
         if (count($parameters) > 4) for ($i = 4; $i < count($parameters); ++$i) $rule[] = $parameters[$i];
@@ -175,5 +159,18 @@ class Ruleset
         else $rule .= ':' . $parameters;
 
         return $rule;
+    }
+
+    /**
+     * Use a value if set, otherwise use an optional default
+     *
+     * @param  array   $parameters
+     * @param  integer $index
+     * @param  string  $default
+     * @return string
+     */
+    private function useParameterIfSet($parameters, $index, $default = null)
+    {
+        return (isset($parameters[$index])) ? $parameters[$index] : $default;
     }
 }
