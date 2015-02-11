@@ -1,3 +1,2 @@
 filter:
-    paths: [src/*, tests/*]
     excluded_paths: [examples/*]
