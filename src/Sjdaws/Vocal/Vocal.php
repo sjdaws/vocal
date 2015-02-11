@@ -244,7 +244,7 @@ class Vocal extends Model
      *
      * @param  string $model
      * @param  array  $conditions
-     * @return array
+     * @return bool
      */
     private function filterRelationshipByConditions($model, $conditions)
     {
@@ -372,7 +372,7 @@ class Vocal extends Model
     /**
      * Determine if we're working with a one or many relationship
      *
-     * @param  object $model
+     * @param  string $model
      * @return string
      */
     private function getRelationshipType($model)
@@ -445,7 +445,7 @@ class Vocal extends Model
      * Hydrate a model from input or an array
      *
      * @param  array $data
-     * @return void
+     * @return false|null
      */
     private function hydrateModel(array $data)
     {
@@ -496,6 +496,42 @@ class Vocal extends Model
             $instance instanceof MorphOne ||
             $instance instanceof MorphTo
         );
+    }
+
+    /**
+     * Validate a record and determine the outcome
+     *
+     * @param  array $rules
+     * @param  array $messages
+     * @return bool
+     */
+    private function performValidation(array $rules, array $messages)
+    {
+        // Determine what we're validating
+        $model = $this->getAttributes();
+
+        // Validate
+        $validator = Validator::make($model, $rules, $messages);
+        $result = $validator->passes();
+
+        // If model is valid, remove old errors
+        if ($result)
+        {
+            $this->errors = new MessageBag;
+
+            // Tag this model as valid
+            $this->_validatedByVocal = true;
+        }
+        else
+        {
+            // Add errors messages
+            $this->errors = $validator->messages();
+
+            // Stash the input to the current session
+            if (Input::hasSession()) Input::flash();
+        }
+
+        $this->fireModelEvent('validated', false);
     }
 
     /**
@@ -617,6 +653,8 @@ class Vocal extends Model
 
 
         }
+
+        return true;
     }
 
     /**
@@ -659,33 +697,8 @@ class Vocal extends Model
             return true;
         }
 
-        // Determine what we're validating
-        $model = $this->getAttributes();
-
-        // Validate
-        $validator = Validator::make($model, $rules, $messages);
-        $result = $validator->passes();
-
-        // If model is valid, remove old errors
-        if ($result)
-        {
-            $this->errors = new MessageBag;
-
-            // Tag this model as valid
-            $this->_validatedByVocal = true;
-        }
-        else
-        {
-            // Add errors messages
-            $this->errors = $validator->messages();
-
-            // Stash the input to the current session
-            if (Input::hasSession()) Input::flash();
-        }
-
-        $this->fireModelEvent('validated', false);
-
-        return $result;
+        // Run validation
+        return $this->performValidation($rules, $messages);
     }
 
     /**
