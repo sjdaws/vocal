@@ -184,6 +184,6 @@ class Ruleset
      */
     private function useParameterIfSet($parameters, $index, $default = null)
     {
-        if (isset($parameters[$index])) ? $parameters[$index] : $default;
+        return (isset($parameters[$index])) ? $parameters[$index] : $default;
     }
 }
