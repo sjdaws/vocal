@@ -69,7 +69,6 @@ class Vocal extends Model
      * Create a new model instance
      *
      * @param  array $attributes
-     * @return Sjdaws\Vocal\Vocal
      */
     public function __construct(array $attributes = array())
     {
