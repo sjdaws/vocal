@@ -16,8 +16,8 @@ class Ruleset
     /**
      * Create a new rule set
      *
-     * @param  Model $model
-     * @param  array $rules
+     * @param Model $model
+     * @param array $rules
      */
     public function __construct($model, array $rules = array())
     {
@@ -37,19 +37,8 @@ class Ruleset
             // Change pipe delimited rules to arrays
             $set = $this->pipeToArray($rule);
 
-            // Process rule
-            foreach ($set as &$rule)
-            {
-                list($type, $parameters) = $this->getRuleTypeAndParameters($rule);
-                $parameters = $this->parseParameters($parameters, $field);
-                $parameters = $this->parseUniqueRule($type, $parameters, $field);
-
-                // Don't try and join parameters unless we have some
-                if ( ! $parameters || ! count(array_filter($parameters))) continue;
-
-                // Rebuild rule
-                $this->rules[] = $this->rebuildRule($type, $parameters);
-            }
+            // Process rules
+            array_merge($this->rules, $this->processRuleset($set));
         }
     }
 
@@ -154,6 +143,32 @@ class Ruleset
     private function pipeToArray($rule)
     {
         return (is_array($rule)) ? $rule : explode('|', $rule);
+    }
+
+    /**
+     * Process rule set into rules
+     *
+     * @param  array $set
+     * @return array
+     */
+    private function processRuleset(array $set)
+    {
+        $rules = array();
+
+        foreach ($set as &$rule)
+        {
+            list($type, $parameters) = $this->getRuleTypeAndParameters($rule);
+            $parameters = $this->parseParameters($parameters, $field);
+            $parameters = $this->parseUniqueRule($type, $parameters, $field);
+
+            // Don't try and join parameters unless we have some
+            if ( ! $parameters || ! count(array_filter($parameters))) continue;
+
+            // Rebuild rule
+            $rules[] = $this->rebuildRule($type, $parameters);
+        }
+
+        return $rules;
     }
 
     /**
