@@ -319,6 +319,32 @@ class Vocal extends Model
     }
 
     /**
+     * Remove any fields which can't be submitted to the database
+     *
+     * @return void
+     */
+    private function removeInvalidAttributes()
+    {
+        foreach ($this->getAttributes() as $attribute => $data)
+        {
+            if ( ! is_null($data) && ! is_scalar($data)) unset($this->$attribute);
+        }
+    }
+
+    /**
+     * Remove any invalid rules before attempting to validate
+     *
+     * @param  array $rules
+     * @return array
+     */
+    private function removeInvalidRules(array $rules)
+    {
+        foreach ($rules as $field => $rule) if (empty($rule)) unset($rules[$field]);
+
+        return $rules;
+    }
+
+    /**
      * Save a single record
      *
      * @param  array $data
@@ -352,6 +378,37 @@ class Vocal extends Model
     private function usesSoftDeletes()
     {
         return ((isset($this->forceDeleting) && ! $this->forceDeleting) || isset($this->softDeletes) && ! $this->softDeletes);
+    }
+
+    /**
+     * Validate a single record
+     *
+     * @param  array $data
+     * @param  array $rules
+     * @param  array $messages
+     * @return bool
+     */
+    public function validate(array $data = array(), array $rules = null, array $messages = array())
+    {
+        // Fill model attributes
+        $this->hydrateModel($data);
+
+        // Remove any fields from the model which can't be submitted, such as objects and arrays
+        // - This will prevent errors with bound objects being saved twice
+        $this->removeInvalidAttributes();
+
+        // Fire validating event
+        if ($this->fireModelEvent('validating') === false) return false;
+
+        $ruleset = new Ruleset($this, $rules ?: $this->rules);
+        $rules = $ruleset->get();
+
+        // If we have no rules then validation will pass
+        if ( ! count($rules))
+        {
+            $this->fireModelEvent('validated', false);
+            return true;
+        }
     }
 
     /**
