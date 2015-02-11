@@ -81,23 +81,6 @@ class Ruleset
     }
 
     /**
-     * Parse a single parameter
-     *
-     * @param  string $field
-     * @param  string $parameter
-     * @return string
-     */
-    private function parseParameter($field, $parameter)
-    {
-        // Replace ~table and ~field unless we have an attribute with the same name
-        if ($parameter == '~table' && ! $this->model->{str_replace('~', '', $parameter)}) $parameter = $this->model->getTable();
-        if ($parameter == '~field' && ! $this->model->{str_replace('~', '', $parameter)}) $parameter = $field;
-
-        // Replace with attribute if we haven't replaced yet
-        if (strpos($parameter, '~') !== false) $parameter = $this->model->{str_replace('~', '', $parameter)};
-    }
-
-    /**
      * Parse rule parameters
      *
      * @param  string       $field
@@ -110,9 +93,16 @@ class Ruleset
         $parameters = (strpos($parameters, ',') > 0) ? explode(',', $parameters) : array($parameters);
 
         // Process each parameter
-        foreach ($parameters as &$parameter)
+        foreach ($parameters as $key => $parameter)
         {
-            if (strpos($parameter, '~') !== false) $parameter = $this->parseParameter($field, $parameter);
+            if (strpos($parameter, '~') !== false)
+            {
+                // Replace ~table and ~field if they exist
+                $parameter = str_ireplace(array('~table', '~field'), array($this->model->getTable(), $field), $parameter);
+
+                // Replace with attribute
+                if (strpos($parameter, '~') !== false) $parameter = $this->model->{str_replace('~', '', $parameter)};
+            }
         }
 
         return $parameters;
