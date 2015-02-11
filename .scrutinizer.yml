@@ -1,2 +1,2 @@
 filter:
-    excluded_paths: [examples/*]
+    excluded_paths: ["examples/*"]
