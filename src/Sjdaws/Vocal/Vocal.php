@@ -116,9 +116,7 @@ class Vocal extends Model
 
                 if (method_exists(get_called_class(), $method))
                 {
-                    $eventMethod = $rad . $event;
-
-                    self::{$eventMethod}(function($model) use ($method)
+                    self::{$rad . $event}(function($model) use ($method)
                     {
                         return $model->{$method}($model);
                     });
@@ -240,8 +238,6 @@ class Vocal extends Model
      */
     private function hashAttributes()
     {
-        if ( ! count($this->hashable)) return;
-
         $hasher = new BcryptHasher;
         $filtered = array_filter($this->attributes);
 
@@ -274,7 +270,7 @@ class Vocal extends Model
     private function hydrateModel(array $data)
     {
         // Make sure we're using fillable, and we haven't previously filled the model which may overwrite stuff
-        if ( ! $this->_hydratedByVocal && $this->fillFromInput && count($this->fillable))
+        if ( ! $this->_hydratedByVocal && $this->fillFromInput)
         {
             // Fire hydrating event
             if ($this->fireModelEvent('hydrating') === false) return false;
