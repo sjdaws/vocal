@@ -1,5 +1,4 @@
-tools:
-    php_cpd:
-        filter:
-            paths: ["src/*", "tests/*"]
-            excluded_paths: ["examples/*"]
+inherit: true
+
+filter:
+  excluded_paths: ["examples/*""]
