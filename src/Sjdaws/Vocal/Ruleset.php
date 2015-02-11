@@ -16,7 +16,7 @@ class Ruleset
     /**
      * Create a new rule set
      *
-     * @param Model $model
+     * @param Vocal $model
      * @param array $rules
      */
     public function __construct($model, array $rules = array())
@@ -38,7 +38,7 @@ class Ruleset
             $set = $this->pipeToArray($rule);
 
             // Process rules
-            array_merge($this->rules, $this->processRuleset($set));
+            array_merge($this->rules, $this->processRuleset($field, $set));
         }
     }
 
@@ -148,10 +148,11 @@ class Ruleset
     /**
      * Process rule set into rules
      *
-     * @param  array $set
+     * @param  string $field
+     * @param  array  $set
      * @return array
      */
-    private function processRuleset(array $set)
+    private function processRuleset($field, array $set)
     {
         $rules = array();
 
