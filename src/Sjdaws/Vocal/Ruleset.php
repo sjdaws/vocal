@@ -95,14 +95,11 @@ class Ruleset
         // Process each parameter
         foreach ($parameters as $key => $parameter)
         {
-            if (strpos($parameter, '~') !== false)
-            {
-                // Replace ~table and ~field if they exist
-                $parameter = str_ireplace(array('~table', '~field'), array($this->model->getTable(), $field), $parameter);
+            // Replace ~table and ~field if they exist
+            $parameter = str_ireplace(array('~table', '~field'), array($this->model->getTable(), $field), $parameter);
 
-                // Replace with attribute
-                if (strpos($parameter, '~') !== false) $parameter = $this->model->{str_replace('~', '', $parameter)};
-            }
+            // Replace with attribute
+            if (strpos($parameter, '~') !== false) $parameter = $this->model->{str_replace('~', '', $parameter)};
         }
 
         return $parameters;
