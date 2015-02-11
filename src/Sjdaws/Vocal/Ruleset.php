@@ -81,13 +81,30 @@ class Ruleset
     }
 
     /**
+     * Parse a single parameter
+     *
+     * @param  string $field
+     * @param  string $parameter
+     * @return string
+     */
+    private function parseParameter($field, $parameter)
+    {
+        // Replace ~table and ~field unless we have an attribute with the same name
+        if ($parameter == '~table' && ! $this->model->{str_replace('~', '', $parameter)}) $parameter = $this->model->getTable();
+        if ($parameter == '~field' && ! $this->model->{str_replace('~', '', $parameter)}) $parameter = $field;
+
+        // Replace with attribute if we haven't replaced yet
+        if (strpos($parameter, '~') !== false) $parameter = $this->model->{str_replace('~', '', $parameter)};
+    }
+
+    /**
      * Parse rule parameters
      *
-     * @param  string|array $parameters
      * @param  string       $field
+     * @param  string|array $parameters
      * @return array
      */
-    private function parseParameters($parameters, $field)
+    private function parseParameters($field, $parameters)
     {
         // Make sure parameters is an array
         $parameters = (strpos($parameters, ',') > 0) ? explode(',', $parameters) : array($parameters);
@@ -95,15 +112,7 @@ class Ruleset
         // Process each parameter
         foreach ($parameters as &$parameter)
         {
-            if (strpos($parameter, '~') !== false)
-            {
-                // Replace ~table and ~field unless we have an attribute with the same name
-                if ($parameter == '~table' && ! $this->model->{str_replace('~', '', $parameter)}) $parameter = $this->model->getTable();
-                if ($parameter == '~field' && ! $this->model->{str_replace('~', '', $parameter)}) $parameter = $field;
-
-                // Replace with attribute if we haven't replaced yet
-                if (strpos($parameter, '~') !== false) $parameter = $this->model->{str_replace('~', '', $parameter)};
-            }
+            if (strpos($parameter, '~') !== false) $parameter = $this->parseParameter($field, $parameter);
         }
 
         return $parameters;
@@ -112,12 +121,12 @@ class Ruleset
     /**
      * Parse a unique rule
      *
-     * @param  string $type
-     * @param  array  $parameters
      * @param  string $field
+     * @param  array  $parameters
+     * @param  string $type
      * @return array
      */
-    private function parseUniqueRule($type, array $parameters, $field)
+    private function parseUniqueRule($field, array $parameters, $type)
     {
         // If we have a unique rule, make sure it's built correctly
         if ($type != 'unique') return $parameters;
@@ -159,8 +168,8 @@ class Ruleset
         foreach ($set as &$rule)
         {
             list($type, $parameters) = $this->getRuleTypeAndParameters($rule);
-            $parameters = $this->parseParameters($parameters, $field);
-            $parameters = $this->parseUniqueRule($type, $parameters, $field);
+            $parameters = $this->parseParameters($field, $parameters);
+            $parameters = $this->parseUniqueRule($field, $parameters, $type);
 
             // Don't try and join parameters unless we have some
             if ( ! $parameters || ! count(array_filter($parameters))) continue;
