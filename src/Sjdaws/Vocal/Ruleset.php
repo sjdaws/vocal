@@ -118,12 +118,15 @@ class Ruleset
         // If we have a unique rule, make sure it's built correctly
         if ($type != 'unique') return $parameters;
 
+        // Determine primary key
+        $primaryKey = (isset($this->model->primaryKey)) ? $this->model->primaryKey : 'id';
+
         // Construct unique rule correctly
         $rule = array(
             $this->useParameterIfSet($parameters, 0, $this->model->getTable()),
             $this->useParameterIfSet($parameters, 1, $field),
-            $this->useParameterIfSet($parameters, 2, (isset($this->model->primaryKey)) ? $this->model->{$this->model->primaryKey} : $this->model->id),
-            $this->useParameterIfSet($parameters, 3, (isset($this->model->primaryKey)) ? $this->model->primaryKey : 'id')
+            $this->useParameterIfSet($parameters, 2, $this->model->{$primaryKey}),
+            $this->useParameterIfSet($parameters, 3, $primaryKey)
         );
 
         // Merge in any other parameters we have

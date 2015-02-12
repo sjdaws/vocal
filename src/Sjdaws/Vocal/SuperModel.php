@@ -8,10 +8,6 @@ use Illuminate\Hashing\BcryptHasher;
 use Illuminate\Support\Str;
 use ReflectionClass;
 
-/**
- * @property int    $id
- * @property string $primaryKey
- */
 class SuperModel extends Model
 {
     /**
@@ -196,6 +192,49 @@ class SuperModel extends Model
     }
 
     /**
+     * Get all relationships for a model
+     *
+     * @param  array $data
+     * @param  array $conditions
+     * @return array
+     */
+    protected function getRelationships(array $data, array $conditions)
+    {
+        $relationships = array();
+
+        // Relationships will be arrays, so reduce dataset
+        $data = array_filter($data, function($value)
+        {
+            return is_array($value);
+        });
+
+        // Loop through input, and check whether any key is a valid relationship
+        foreach ($data as $model => $value)
+        {
+            // Class name for models will always be camel case
+            $modelClass = Str::camel($model);
+
+            /**
+             * A valid relationship must:
+             * - Be a method
+             * - Not appear in the 'except' list
+             * - Appear in the 'only' list (if used)
+             * - Be a valid instance of a relationship type
+             */
+            if (
+                ! method_exists($this, $model) ||
+                ! $this->filterRelationshipByConditions($model, $conditions) ||
+                ! $this->isRelationship($modelClass)
+            ) continue;
+
+            // Capture relationship and it's type
+            $relationships[$model] = $this->getRelationshipType($modelClass);
+        }
+
+        return $relationships;
+    }
+
+    /**
      * Determine if we're working with a one or many relationship
      *
      * @param  string $model
@@ -204,7 +243,7 @@ class SuperModel extends Model
     private function getRelationshipType($model)
     {
         // Poke method to check the type of instance
-        $class = get_class($this->$model());
+        $class = get_class($this->{$model}());
         $reflection = new ReflectionClass($class);
 
         return (in_array($reflection->getShortName(), array('BelongsTo', 'HasOne', 'MorphOne', 'MorphTo'))) ? 'one' : 'many';
@@ -282,7 +321,7 @@ class SuperModel extends Model
     private function isRelationship($model)
     {
         // All relations extend Illuminate\Database\Eloquent\Relations\Relation
-        return is_subclass_of($this->$model(), 'Relation');
+        return is_subclass_of($this->{$model}(), 'Relation');
     }
 
     /**
@@ -294,7 +333,7 @@ class SuperModel extends Model
     {
         foreach ($this->getAttributes() as $attribute => $data)
         {
-            if ( ! is_null($data) && ! is_scalar($data)) unset($this->$attribute);
+            if ( ! is_null($data) && ! is_scalar($data)) unset($this->{$attribute});
         }
     }
 
