@@ -3,6 +3,11 @@
 namespace Sjdaws\Vocal;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Hashing\BcryptHasher;
+use Illuminate\Support\Facades\Input;
+use Illuminate\Support\Str;
+
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -11,27 +16,13 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Database\Eloquent\Relations\Relation;
-use Illuminate\Support\Facades\Input;
-use Illuminate\Support\Facades\Lang;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Hashing\BcryptHasher;
-use Illuminate\Support\Str;
-use Illuminate\Support\MessageBag;
 
 /**
  * @property int    $id
  * @property string $primaryKey
  */
-class Vocal extends Model
+class SuperModel extends Model
 {
-    /**
-     * The message bag instance containing validation error messages
-     *
-     * @var Illuminate\Support\MessageBag
-     */
-    protected $errors;
-
     /**
      * Whether to fill the model from input or not
      *
@@ -47,11 +38,11 @@ class Vocal extends Model
     protected $hashable = array();
 
     /**
-     * Whether to validate before save or not
+     * The events which will we observe
      *
-     * @var bool
+     * @var array
      */
-    public $validateBeforeSave = false;
+    private $observableEvents = array();
 
     /**
      * Determine whether the model has been hydrated
@@ -59,13 +50,6 @@ class Vocal extends Model
      * @var bool
      */
     private $_hydratedByVocal = false;
-
-    /**
-     * Determine whether the model has been validated
-     *
-     * @var bool
-     */
-    private $_validatedByVocal = false;
 
     /**
      * Create a new model instance
@@ -76,11 +60,50 @@ class Vocal extends Model
     {
         parent::__construct($attributes);
 
-        // Create message bag for errors
-        $this->errors = new MessageBag;
-
         // Boot model to enable hooks
         self::boot();
+    }
+
+    /**
+     * Add a callback for an event if it exists
+     *
+     * @param  string $method
+     * @return null
+     */
+    private function addObservableEvent($method, $event)
+    {
+        if (method_exists(get_called_class(), $method))
+        {
+            self::{$event}(function($model) use ($method)
+            {
+                return $model->{$method}($model);
+            });
+
+            // Keep track of events
+            $this->observableEvents[] = $event;
+        }
+    }
+
+    /**
+     * Attach callback before and after a set of events
+     *
+     * @param  array $event
+     * @return null
+     */
+    protected function addEventCallbacks(array $events)
+    {
+        $hooks = array('before' => 'ing', 'after' => 'ed');
+
+        foreach ($events as $event)
+        {
+            foreach ($hooks as $hook => $suffix)
+            {
+                $method = $hook . ucfirst($event) . 'e';
+                $callback = $event . $suffix;
+
+                $this->addObservableEvent($method, $callback);
+            }
+        }
     }
 
     /**
@@ -102,28 +125,11 @@ class Vocal extends Model
      * @see    Illuminate\Database\Eloquent\Model::boot()
      * @return void
      */
-    public static function boot()
+    public static function boot(array $radicals)
     {
         parent::boot();
 
-        $hooks    = array('before' => 'ing', 'after' => 'ed');
-        $radicals = array('creat', 'delet', 'hydrat', 'sav', 'updat', 'validat');
-
-        foreach ($radicals as $rad)
-        {
-            foreach ($hooks as $hook => $event)
-            {
-                $method = $hook . ucfirst($rad) . 'e';
-
-                if (method_exists(get_called_class(), $method))
-                {
-                    self::{$rad . $event}(function($model) use ($method)
-                    {
-                        return $model->{$method}($model);
-                    });
-                }
-            }
-        }
+        $this->addEventCallbacks(array('creat', 'delet', 'hydrat', 'sav', 'updat'));
     }
 
     /**
@@ -163,16 +169,13 @@ class Vocal extends Model
     }
 
     /**
-     * Get the observable event names
+     * Get the observable event names including any hooks
      *
      * @return array
      */
     public function getObservableEvents()
     {
-        return array_merge(
-            parent::getObservableEvents(),
-            array('hydrating', 'hydrated', 'validating', 'validated')
-        );
+        return array_merge(parent::getObservableEvents(), $this->observableEvents);
     }
 
     /**
@@ -223,6 +226,8 @@ class Vocal extends Model
     {
         // Poke method to check the type of instance
         $instance = $this->$model();
+        $class = get_class($this->$model());
+
 
         return (
             $instance instanceof BelongsTo ||
@@ -321,19 +326,6 @@ class Vocal extends Model
     }
 
     /**
-     * Remove any invalid rules before attempting to validate
-     *
-     * @param  array $rules
-     * @return array
-     */
-    private function removeInvalidRules(array $rules)
-    {
-        foreach ($rules as $field => $rule) if (empty($rule)) unset($rules[$field]);
-
-        return $rules;
-    }
-
-    /**
      * Save a single record
      *
      * @param  array $data
@@ -367,58 +359,5 @@ class Vocal extends Model
     private function usesSoftDeletes()
     {
         return ((isset($this->forceDeleting) && ! $this->forceDeleting) || isset($this->softDeletes) && ! $this->softDeletes);
-    }
-
-    /**
-     * Validate a single record
-     *
-     * @param  array $data
-     * @param  array $rules
-     * @param  array $messages
-     * @return bool
-     */
-    public function validate(array $data = array(), array $rules = null, array $messages = array())
-    {
-        // Fill model attributes
-        $this->hydrateModel($data);
-
-        // Remove any fields from the model which can't be submitted, such as objects and arrays
-        // - This will prevent errors with bound objects being saved twice
-        $this->removeInvalidAttributes();
-
-        // Fire validating event
-        if ($this->fireModelEvent('validating') === false) return false;
-
-        $ruleset = new Ruleset($this, $rules ?: $this->rules);
-        $rules = $ruleset->get();
-
-        // If we have no rules then validation will pass
-        if ( ! count($rules))
-        {
-            $this->fireModelEvent('validated', false);
-            return true;
-        }
-    }
-
-    /**
-     * Register a validated model event with the dispatcher
-     *
-     * @param  Closure|string $callback
-     * @return void
-     */
-    public static function validated($callback)
-    {
-        static::registerModelEvent('validated', $callback);
-    }
-
-    /**
-     * Register a validating model event with the dispatcher
-     *
-     * @param  Closure|string $callback
-     * @return void
-     */
-    public static function validating($callback)
-    {
-        static::registerModelEvent('validating', $callback);
     }
 }
