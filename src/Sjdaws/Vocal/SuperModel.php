@@ -5,17 +5,8 @@ namespace Sjdaws\Vocal;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Hashing\BcryptHasher;
-use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Str;
-
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Database\Eloquent\Relations\MorphOne;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
+use ReflectionClass;
 
 /**
  * @property int    $id
@@ -215,14 +206,9 @@ class SuperModel extends Model
         // Poke method to check the type of instance
         $instance = $this->$model();
         $class = get_class($this->$model());
+        $reflection = new ReflectionClass($class);
 
-
-        return (
-            $instance instanceof BelongsTo ||
-            $instance instanceof HasOne ||
-            $instance instanceof MorphOne ||
-            $instance instanceof MorphTo
-        ) ? 'one' : 'many';
+        return (in_array($reflection->getShortName(), array('BelongsTo', 'HasOne', 'MorphOne', 'MorphTo'))) ? 'one' : 'many';
     }
 
     /**
