@@ -41,20 +41,7 @@ class Validation extends SuperModel
         // Create message bag for errors
         $this->errors = new MessageBag;
 
-        // Boot model to enable hooks
-        self::boot();
-    }
-
-    /**
-     * Override to boot method of each model to attach before and after hooks
-     *
-     * @see    Illuminate\Database\Eloquent\Model::boot()
-     * @return void
-     */
-    public static function boot()
-    {
-        parent::boot();
-
+        // Add event callbacks
         $this->addEventCallbacks(array('validat'));
     }
 

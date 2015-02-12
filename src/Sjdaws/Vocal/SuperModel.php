@@ -60,14 +60,15 @@ class SuperModel extends Model
     {
         parent::__construct($attributes);
 
-        // Boot model to enable hooks
-        self::boot();
+        // Add event callbacks
+        $this->addEventCallbacks(array('creat', 'delet', 'hydrat', 'sav', 'updat'));
     }
 
     /**
      * Add a callback for an event if it exists
      *
      * @param  string $method
+     * @param  string $event
      * @return null
      */
     private function addObservableEvent($method, $event)
@@ -87,7 +88,7 @@ class SuperModel extends Model
     /**
      * Attach callback before and after a set of events
      *
-     * @param  array $event
+     * @param  array $events
      * @return null
      */
     protected function addEventCallbacks(array $events)
@@ -117,19 +118,6 @@ class SuperModel extends Model
         $model->setAttribute($this->getPlainForeignKey(), $this->getParentKey());
 
         return $model->forceSave() ? $model : false;
-    }
-
-    /**
-     * Override to boot method of each model to attach before and after hooks
-     *
-     * @see    Illuminate\Database\Eloquent\Model::boot()
-     * @return void
-     */
-    public static function boot(array $radicals)
-    {
-        parent::boot();
-
-        $this->addEventCallbacks(array('creat', 'delet', 'hydrat', 'sav', 'updat'));
     }
 
     /**
