@@ -130,7 +130,7 @@ class SuperModel extends Model
      * @param  string $key
      * @return Model
      */
-    private function findOrCreateRecord(Model $model, $key = null)
+    protected function findOrCreateRecord(Model $model, $key = null)
     {
         if ($key)
         {
@@ -162,7 +162,7 @@ class SuperModel extends Model
      * @param  array  $messages
      * @return array
      */
-    private function getRelationshipData($relationship, array $conditions, array $rules, array $messages)
+    protected function getRelationshipData($relationship, array $conditions, array $rules, array $messages)
     {
         return array(
             $this->getRelationshipDataFromArray($relationship, $conditions),

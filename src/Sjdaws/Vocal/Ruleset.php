@@ -2,6 +2,9 @@
 
 namespace Sjdaws\Vocal;
 
+/**
+ * @property $primaryKey
+ */
 class Ruleset
 {
     private $model;
