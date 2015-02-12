@@ -103,28 +103,6 @@ class Validation extends SuperModel
     }
 
     /**
-     * Find a record, validate it and return it
-     *
-     * @param  Model $model
-     * @param  array $data
-     * @param  array $rules
-     * @param  array $messages
-     * @return MessageBag
-     */
-    private function validateRecord(Model $model, array $data, array $rules = array(), array $messages = array())
-    {
-        // Find or create record
-        $primaryKey = (isset($model->primaryKey)) ? $model->primaryKey : 'id';
-        $key = isset($data[$primaryKey]) ? $data[$primaryKey] : null;
-        $record = $this->findOrCreateRecord($model, $key);
-
-        // Validate and return errors
-        $record->validate($data, $rules, $messages);
-
-        return $record->errors;
-    }
-
-    /**
      * Validate a single record
      *
      * @param  array $data
@@ -166,6 +144,28 @@ class Validation extends SuperModel
     public static function validated($callback)
     {
         static::registerModelEvent('validated', $callback);
+    }
+
+    /**
+     * Find a record, validate it and return it
+     *
+     * @param  Model $model
+     * @param  array $data
+     * @param  array $rules
+     * @param  array $messages
+     * @return MessageBag
+     */
+    private function validateRecord(Model $model, array $data, array $rules = array(), array $messages = array())
+    {
+        // Find or create record
+        $primaryKey = (isset($model->primaryKey)) ? $model->primaryKey : 'id';
+        $key = isset($data[$primaryKey]) ? $data[$primaryKey] : null;
+        $record = $this->findOrCreateRecord($model, $key);
+
+        // Validate and return errors
+        $record->validate($data, $rules, $messages);
+
+        return $record;
     }
 
     /**
@@ -222,8 +222,8 @@ class Validation extends SuperModel
             // Validate based on record type
             if ($type == 'one')
             {
-                $result = $this->validateRecord($instance, $data[$model], $rules, $messages);
-                $errors = $this->captureValidationErrors($errors, $result);
+                $record = $this->validateRecord($instance, $data[$model], $rules, $messages);
+                $errors = $this->captureValidationErrors($errors, $record->errors);
             }
             else
             {
@@ -231,7 +231,7 @@ class Validation extends SuperModel
                 {
                     // Find or create record
                     $record = $this->findOrCreateRecord($instance, $relationship, $rules, $messages);
-                    $errors = $this->captureValidationErrors($errors, $result, $index);
+                    $errors = $this->captureValidationErrors($errors, $record->errors, $index);
 
                     // Validate children if we have some
                     $cousins = $record->getRelationships($relationship, $conditions);

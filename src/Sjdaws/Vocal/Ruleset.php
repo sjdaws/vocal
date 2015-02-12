@@ -3,7 +3,7 @@
 namespace Sjdaws\Vocal;
 
 /**
- * @property $primaryKey
+ * @property string $primaryKey
  */
 class Ruleset
 {
