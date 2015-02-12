@@ -38,7 +38,7 @@ class Ruleset
             $set = $this->pipeToArray($rule);
 
             // Process rules
-            array_merge($this->rules, $this->processRuleset($field, $set));
+            $this->rules = array_merge($this->rules, $this->processRuleset($field, $set));
         }
     }
 
@@ -161,9 +161,6 @@ class Ruleset
             $parameters = $this->parseParameters($field, $parameters);
             $parameters = $this->parseUniqueRule($field, $parameters, $type);
 
-            // Don't try and join parameters unless we have some
-            if ( ! $parameters || ! count(array_filter($parameters))) continue;
-
             // Rebuild rule
             $rules[] = $this->rebuildRule($type, $parameters);
         }
@@ -186,7 +183,8 @@ class Ruleset
         if (is_array($parameters) && count($parameters)) $rule .= ':' . implode(',', $parameters);
         else $rule .= ':' . $parameters;
 
-        return $rule;
+        // Remove any trailing colons we have from rules without parameters
+        return trim($rule, ':');
     }
 
     /**

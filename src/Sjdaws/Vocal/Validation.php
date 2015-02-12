@@ -66,6 +66,44 @@ class Validation extends SuperModel
     }
 
     /**
+     * Validate a record and determine the outcome
+     *
+     * @param  array $rules
+     * @param  array $messages
+     * @return bool
+     */
+    private function performValidation(array $rules, array $messages)
+    {
+        // Determine what we're validating
+        $data = $this->getAttributes();
+
+        // Validate
+        $validator = Validator::make($data, $rules, $messages);
+        $result = $validator->passes();
+
+        // If model is valid, remove old errors
+        if ($result)
+        {
+            $this->errors = new MessageBag;
+
+            // Tag this model as valid
+            $this->_validatedByVocal = true;
+        }
+        else
+        {
+            // Add errors messages
+            $this->errors = $validator->messages();
+
+            // Stash the input to the current session
+            if (Input::hasSession()) Input::flash();
+        }
+
+        $this->fireModelEvent('validated', false);
+
+        return $result;
+    }
+
+    /**
      * Find a record, validate it and return it
      *
      * @param  Model $model
@@ -116,6 +154,8 @@ class Validation extends SuperModel
             $this->fireModelEvent('validated', false);
             return true;
         }
+
+        return $this->performValidation($rules, $messages);
     }
 
     /**
