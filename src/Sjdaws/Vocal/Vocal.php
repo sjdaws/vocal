@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Validator;
@@ -302,20 +303,8 @@ class Vocal extends Model
      */
     private function isRelationship($model)
     {
-        // Poke method to check the type of instance
-        $instance = $this->$model();
-
-        // Check whether the instance is a relationship
-        return (
-            $instance instanceof BelongsTo ||
-            $instance instanceof BelongsToMany ||
-            $instance instanceof HasMany ||
-            $instance instanceof HasManyThrough ||
-            $instance instanceof HasOne ||
-            $instance instanceof MorphMany ||
-            $instance instanceof MorphOne ||
-            $instance instanceof MorphTo
-        );
+        // All relations extend Illuminate\Database\Eloquent\Relations\Relation
+        return is_subclass_of($this->$model(), 'Relation');
     }
 
     /**
