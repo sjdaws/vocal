@@ -204,7 +204,6 @@ class SuperModel extends Model
     private function getRelationshipType($model)
     {
         // Poke method to check the type of instance
-        $instance = $this->$model();
         $class = get_class($this->$model());
         $reflection = new ReflectionClass($class);
 
