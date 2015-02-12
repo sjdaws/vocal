@@ -214,24 +214,11 @@ class SuperModel extends Model
         // Loop through input, and check whether any key is a valid relationship
         foreach ($data as $model => $value)
         {
-            // Class name for models will always be camel case
-            $modelClass = Str::camel($model);
-
-            /**
-             * A valid relationship must:
-             * - Be a method
-             * - Not appear in the 'except' list
-             * - Appear in the 'only' list (if used)
-             * - Be a valid instance of a relationship type
-             */
-            if (
-                ! method_exists($this, $model) ||
-                ! $this->filterRelationshipByConditions($model, $conditions) ||
-                ! $this->isRelationship($modelClass)
-            ) continue;
+            // Skip anything which isn't a valid relationship
+            if ( ! $this->isRelationship($model, $conditions)) continue;
 
             // Capture relationship and it's type
-            $relationships[$model] = $this->getRelationshipType($modelClass);
+            $relationships[$model] = $this->getRelationshipType(Str::camel($model));
         }
 
         return $relationships;
@@ -319,12 +306,23 @@ class SuperModel extends Model
      * Determine if a string is a relationship
      *
      * @param  string $model
+     * @param  array  $conditions
      * @return bool
      */
-    private function isRelationship($model)
+    private function isRelationship($model, $conditions)
     {
-        // All relations extend Illuminate\Database\Eloquent\Relations\Relation
-        return is_subclass_of($this->{$model}(), 'Relation');
+        /**
+         * A valid relationship must:
+         * - Be a method
+         * - Not appear in the 'except' list
+         * - Appear in the 'only' list (if used)
+         * - Extend Illuminate\Database\Eloquent\Relations\Relation
+         */
+        return (
+            method_exists($this, $model) &&
+            $this->filterRelationshipByConditions($model, $conditions) &&
+            is_subclass_of($this->{Str::camel($model)}(), 'Relation')
+        );
     }
 
     /**
