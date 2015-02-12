@@ -2,7 +2,6 @@
 
 namespace Sjdaws\Vocal;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\MessageBag;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Validator;
