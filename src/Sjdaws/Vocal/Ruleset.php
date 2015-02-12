@@ -2,9 +2,6 @@
 
 namespace Sjdaws\Vocal;
 
-/**
- * @property string $primaryKey
- */
 class Ruleset
 {
     private $model;
@@ -19,10 +16,10 @@ class Ruleset
     /**
      * Create a new rule set
      *
-     * @param Vocal $model
-     * @param array $rules
+     * @param SuperModel $model
+     * @param array      $rules
      */
-    public function __construct($model, array $rules = array())
+    public function __construct(SuperModel $model, array $rules = array())
     {
         $this->model = $model;
         $this->add(array_filter($rules));

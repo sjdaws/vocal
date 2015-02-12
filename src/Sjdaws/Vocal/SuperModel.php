@@ -8,6 +8,9 @@ use Illuminate\Hashing\BcryptHasher;
 use Illuminate\Support\Str;
 use ReflectionClass;
 
+/**
+ * @property string $primaryKey
+ */
 class SuperModel extends Model
 {
     /**
