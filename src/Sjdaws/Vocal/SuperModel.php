@@ -261,7 +261,7 @@ class SuperModel extends Model
      * @param  array $data
      * @return false|null
      */
-    private function hydrateModel(array $data)
+    protected function hydrateModel(array $data)
     {
         // Make sure we're using fillable, and we haven't previously filled the model which may overwrite stuff
         if ( ! $this->_hydratedByVocal && $this->fillFromInput)
@@ -305,7 +305,7 @@ class SuperModel extends Model
      *
      * @return void
      */
-    private function removeInvalidAttributes()
+    protected function removeInvalidAttributes()
     {
         foreach ($this->getAttributes() as $attribute => $data)
         {
