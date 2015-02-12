@@ -14,6 +14,13 @@ use ReflectionClass;
 class SuperModel extends Model
 {
     /**
+     * The message bag instance containing validation error messages
+     *
+     * @var Illuminate\Support\MessageBag
+     */
+    protected $errors;
+
+    /**
      * Whether to fill the model from input or not
      *
      * @var bool
@@ -42,6 +49,20 @@ class SuperModel extends Model
     private $_hydratedByVocal = false;
 
     /**
+     * Whether to validate before save or not
+     *
+     * @var bool
+     */
+    public $validateBeforeSave = false;
+
+    /**
+     * Determine whether the model has been validated
+     *
+     * @var bool
+     */
+    private $_validatedByVocal = false;
+
+    /**
      * Create a new model instance
      *
      * @param  array $attributes
@@ -50,8 +71,11 @@ class SuperModel extends Model
     {
         parent::__construct($attributes);
 
+        // Create message bag for errors
+        $this->errors = new MessageBag;
+
         // Add event callbacks
-        $this->addEventCallbacks(array('creat', 'delet', 'hydrat', 'sav', 'updat'));
+        $this->addEventCallbacks(array('creat', 'delet', 'hydrat', 'sav', 'updat', 'validat'));
     }
 
     /**
@@ -98,35 +122,6 @@ class SuperModel extends Model
     }
 
     /**
-     * Attach a model instance to the parent model
-     *
-     * @param  Illuminate\Database\Eloquent\Model $model
-     * @return Illuminate\Database\Eloquent\Model
-     */
-    public function attachToParent(Model $model)
-    {
-        $model->setAttribute($this->getPlainForeignKey(), $this->getParentKey());
-
-        return $model->forceSave() ? $model : false;
-    }
-
-    /**
-     * Test 'only' and 'except' lists for excluding relationships
-     *
-     * @param  string $model
-     * @param  array  $conditions
-     * @return bool
-     */
-    private function filterRelationshipByConditions($model, $conditions)
-    {
-        // Test for false and return the opposite
-        return ( !
-            (isset($conditions['only']) && ! in_array($model, $conditions['only'])) ||
-            (isset($conditions['except']) && in_array($model, $conditions['except']))
-        );
-    }
-
-    /**
      * Find or create a record if it doesn't exist
      *
      * @param  Model  $model
@@ -154,89 +149,6 @@ class SuperModel extends Model
     public function getObservableEvents()
     {
         return array_merge(parent::getObservableEvents(), $this->observableEvents);
-    }
-
-    /**
-     * Get data for a relationship
-     *
-     * @param  string $relationship
-     * @param  array  $conditions
-     * @param  array  $rules
-     * @param  array  $messages
-     * @return array
-     */
-    protected function getRelationshipData($relationship, array $conditions, array $rules, array $messages)
-    {
-        return array(
-            $this->getRelationshipDataFromArray($relationship, $conditions),
-            $this->getRelationshipDataFromArray($relationship, $rules),
-            $this->getRelationshipDataFromArray($relationship, $messages)
-        );
-    }
-
-    /**
-     * Extract data from a relationship array
-     *
-     * @param  string $relationship
-     * @param  array $data
-     * @return array
-     */
-    private function getRelationshipDataFromArray($relationship, array $data)
-    {
-        // Determine model class
-        $modelClass = Str::camel($relationship);
-
-        if (isset($data[$relationship]) || isset($data[$modelClass]))
-        {
-            return (isset($data[$relationship])) ? $data[$relationship] : $data[$modelClass];
-        }
-
-        return array();
-    }
-
-    /**
-     * Get all relationships for a model
-     *
-     * @param  array $data
-     * @param  array $conditions
-     * @return array
-     */
-    protected function getRelationships(array $data, array $conditions)
-    {
-        $relationships = array();
-
-        // Relationships will be arrays, so reduce dataset
-        $data = array_filter($data, function($value)
-        {
-            return is_array($value);
-        });
-
-        // Loop through input, and check whether any key is a valid relationship
-        foreach ($data as $model => $value)
-        {
-            // Skip anything which isn't a valid relationship
-            if ( ! $this->isRelationship($model, $conditions)) continue;
-
-            // Capture relationship and it's type
-            $relationships[$model] = $this->getRelationshipType(Str::camel($model));
-        }
-
-        return $relationships;
-    }
-
-    /**
-     * Determine if we're working with a one or many relationship
-     *
-     * @param  string $model
-     * @return string
-     */
-    private function getRelationshipType($model)
-    {
-        // Poke method to check the type of instance
-        $class = get_class($this->{$model}());
-        $reflection = new ReflectionClass($class);
-
-        return (in_array($reflection->getShortName(), array('BelongsTo', 'HasOne', 'MorphOne', 'MorphTo'))) ? 'one' : 'many';
     }
 
     /**
@@ -303,29 +215,6 @@ class SuperModel extends Model
     }
 
     /**
-     * Determine if a string is a relationship
-     *
-     * @param  string $model
-     * @param  array  $conditions
-     * @return bool
-     */
-    private function isRelationship($model, $conditions)
-    {
-        /**
-         * A valid relationship must:
-         * - Be a method
-         * - Not appear in the 'except' list
-         * - Appear in the 'only' list (if used)
-         * - Extend Illuminate\Database\Eloquent\Relations\Relation
-         */
-        return (
-            method_exists($this, $model) &&
-            $this->filterRelationshipByConditions($model, $conditions) &&
-            is_subclass_of($this->{Str::camel($model)}(), 'Relation')
-        );
-    }
-
-    /**
      * Remove any fields which can't be submitted to the database
      *
      * @return void
@@ -339,38 +228,34 @@ class SuperModel extends Model
     }
 
     /**
-     * Save a single record
-     *
-     * @param  array $data
-     * @param  array $rules
-     * @param  array $messages
-     * @return bool
-     */
-    public function save(array $data = array(), array $rules = array(), array $messages = array())
-    {
-        // Fill model attributes
-        $this->hydrateModel($data);
-
-        // Validate record before save unless we're asked not to
-        $valid = ( ! $this->validateBeforeSave || $this->_validatedByVocal) ? true : $this->validate($data, $rules, $messages);
-
-        // If record is invalid, save is unsuccessful
-        if ( ! $valid) return false;
-
-        // Hash any hashable attributes
-        $this->hashAttributes();
-
-        // Save the record
-        return parent::save();
-    }
-
-    /**
      * Determine if a model is using soft deletes
      *
      * @return bool
      */
     private function usesSoftDeletes()
     {
-        return ((isset($this->forceDeleting) && ! $this->forceDeleting) || isset($this->softDeletes) && ! $this->softDeletes);
+        return ((isset($this->forceDeleting) && ! $this->forceDeleting) || isset($this->softDelete) && ! $this->softDelete);
+    }
+
+    /**
+     * Register a validated model event with the dispatcher
+     *
+     * @param  Closure|string $callback
+     * @return void
+     */
+    public static function validated($callback)
+    {
+        static::registerModelEvent('validated', $callback);
+    }
+
+    /**
+     * Register a validating model event with the dispatcher
+     *
+     * @param  Closure|string $callback
+     * @return void
+     */
+    public static function validating($callback)
+    {
+        static::registerModelEvent('validating', $callback);
     }
 }

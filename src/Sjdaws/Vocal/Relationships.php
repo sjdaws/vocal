@@ -2,7 +2,7 @@
 
 namespace Sjdaws\Vocal;
 
-class Validation
+class Relationships
 {
     /**
      * The model we're checking relationships against
@@ -12,7 +12,7 @@ class Validation
     private $model;
 
     /**
-     * Create a new validator
+     * Create a new instance
      *
      * @param Vocal $model
      */

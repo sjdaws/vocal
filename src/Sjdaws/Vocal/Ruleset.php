@@ -4,6 +4,11 @@ namespace Sjdaws\Vocal;
 
 class Ruleset
 {
+    /**
+     * The model we're checking relationships against
+     *
+     * @var Vocal
+     */
     private $model;
 
     /**
@@ -14,12 +19,12 @@ class Ruleset
     private $rules = array();
 
     /**
-     * Create a new rule set
+     * Create a new ruleset
      *
-     * @param SuperModel $model
-     * @param array      $rules
+     * @param Vocal $model
+     * @param array $rules
      */
-    public function __construct(SuperModel $model, array $rules = array())
+    public function __construct(Vocal $model, array $rules = array())
     {
         $this->model = $model;
         $this->add(array_filter($rules));
