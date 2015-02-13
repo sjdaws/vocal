@@ -4,6 +4,9 @@ namespace Sjdaws\Vocal\Traits;
 
 use Illuminate\Hashing\BcryptHasher;
 
+/**
+ * @property array $attributes
+ */
 trait Hashing
 {
     /**
@@ -12,6 +15,16 @@ trait Hashing
      * @var array
      */
     protected $hashable = array();
+
+    /**
+     * Get the original value for an attribute
+     *
+     * @see    \Illuminate\Database\Eloquent\Model::getOriginal()
+     * @param  string $key
+     * @param  mixed  $default
+     * @return array
+     */
+    abstract public function getOriginal($key = null, $default = null);
 
     /**
      * Hash any hashable attributes
