@@ -2,14 +2,14 @@
 
 namespace Sjdaws\Vocal;
 
-use \Illuminate\Database\Eloquent\Model;
-use \Sjdaws\Vocal\Traits\Events;
-use \Sjdaws\Vocal\Traits\Hashing;
-use \Sjdaws\Vocal\Traits\Hydration;
-use \Sjdaws\Vocal\Traits\Messages;
-use \Sjdaws\Vocal\Traits\Relations;
-use \Sjdaws\Vocal\Traits\Rules;
-use \Sjdaws\Vocal\Traits\Validation;
+use Illuminate\Database\Eloquent\Model;
+use Sjdaws\Vocal\Traits\Events;
+use Sjdaws\Vocal\Traits\Hashing;
+use Sjdaws\Vocal\Traits\Hydration;
+use Sjdaws\Vocal\Traits\Messages;
+use Sjdaws\Vocal\Traits\Relations;
+use Sjdaws\Vocal\Traits\Rules;
+use Sjdaws\Vocal\Traits\Validation;
 
 class Vocal extends Model
 {

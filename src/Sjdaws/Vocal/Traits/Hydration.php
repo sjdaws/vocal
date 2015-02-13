@@ -2,7 +2,7 @@
 
 namespace Sjdaws\Vocal\Traits;
 
-use \Illuminate\Support\Facades\Input;
+use Illuminate\Support\Facades\Input;
 
 trait Hydration
 {

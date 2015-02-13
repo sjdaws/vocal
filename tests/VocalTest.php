@@ -2,9 +2,12 @@
 
 namespace Sjdaws\Tests;
 
+use Illuminate\Contracts\Console\Kernel;
 use Orchestra\Testbench\TestCase;
 use Sjdaws\Tests\Models\Test;
 use Sjdaws\Tests\Models\TestChild;
+use ReflectionClass;
+use ReflectionException;
 
 class Tests extends TestCase
 {
@@ -46,7 +49,15 @@ class Tests extends TestCase
     private function migrateDatabase()
     {
         // Laravel 5 changes console class
-        $console = (class_exists('Illuminate\Contracts\Console\Kernel')) ? 'Illuminate\Contracts\Console\Kernel' : 'artisan';
+        try {
+            $console = 'Illuminate\Contracts\Console\Kernel';
+            $class = new ReflectionClass($console);
+        }
+        catch (ReflectionException $Exception)
+        {
+            $console = 'artisan';
+        }
+
         $this->app->make($console)->call('migrate', array('--database' => 'testbench', '--path' => '../tests/Migrations'));
     }
 
