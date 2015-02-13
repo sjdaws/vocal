@@ -4,7 +4,7 @@ namespace Sjdaws\Tests\Models;
 
 use Sjdaws\Vocal\Vocal;
 
-class TestChild extends Vocal
+class TestChildChild extends Vocal
 {
     /**
      * The fields which can be filled from input
@@ -27,7 +27,7 @@ class TestChild extends Vocal
      *
      * @var string
      */
-    protected $table = 'test_child';
+    protected $table = 'test_child_child';
 
     /**
      * Join parent record
@@ -36,16 +36,6 @@ class TestChild extends Vocal
      */
     public function parent()
     {
-        return $this->belongsTo('Sjdaws\Tests\Models\Test', 'test_id');
-    }
-
-    /**
-     * Join child records
-     *
-     * @return object
-     */
-    public function children()
-    {
-        return $this->hasMany('Sjdaws\Tests\Models\TestChildChild', 'test_child_id');
+        return $this->belongsTo('Sjdaws\Tests\Models\TestChild', 'test_child_id');
     }
 }

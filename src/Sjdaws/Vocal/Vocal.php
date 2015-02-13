@@ -2,42 +2,81 @@
 
 namespace Sjdaws\Vocal;
 
-class Vocal extends SuperModel
+use \Illuminate\Database\Eloquent\Model;
+use \Sjdaws\Vocal\Traits\Events;
+use \Sjdaws\Vocal\Traits\Hashing;
+use \Sjdaws\Vocal\Traits\Hydration;
+use \Sjdaws\Vocal\Traits\Messages;
+use \Sjdaws\Vocal\Traits\Relations;
+use \Sjdaws\Vocal\Traits\Rules;
+use \Sjdaws\Vocal\Traits\Validation;
+
+class Vocal extends Model
 {
+    use Events, Hashing, Hydration, Messages, Rules, Relations, Validation;
+
+    /**
+     * Create a new model instance
+     *
+     * @param  array $attributes
+     */
+    public function __construct(array $attributes = array())
+    {
+        parent::__construct($attributes);
+        self::boot();
+    }
+
+    /**
+     * Monitor events and trigger callbacks if they exist
+     *
+     * @see \Illuminate\Database\Eloquent\Model::boot()
+     * @return null
+     */
+    public static function boot()
+    {
+        parent::boot();
+
+        // Add event callbacks
+        self::addEventCallbacks(array('creat', 'delet', 'hydrat', 'restor', 'sav', 'updat', 'validat'));
+    }
+
+    /**
+     * Create a new record
+     *
+     *
+     */
+    //public static function create()
+    //{}
+
+    /**
+     * Save a single record
+     *
+     *
+     */
+    //public function save()
+    //{}
+
+    /**
+     * Save a set of records
+     *
+     *
+     */
+    public function saveRecursive()
+    {}
+
     /**
      * Validate a single record
      *
-     * @param  array $data
-     * @param  array $rules
-     * @param  array $messages
-     * @return bool
+     *
      */
-    public function validate(array $data = array(), array $rules = array(), array $messages = array())
-    {
-        // Fill model attributes
-        $this->hydrateModel($data);
-
-        // Fire validating event
-        if ($this->fireModelEvent('validating') === false) return false;
-
-        $this->validator = new Validation($this, $rules, $messages);
-
-        $this->fireModelEvent('validated', false);
-
-        return $this->validator->getResult();
-    }
+    public function validate()
+    {}
 
     /**
-     * Recursively validate a record and all it's relationships
+     * Validate a set of records
      *
-     * @param  array $data
-     * @param  array $conditions
-     * @param  array $rules
-     * @param  array $messages
-     * @return bool
+     *
      */
-    public function validateRecursive(array $data = array(), array $conditions = array(), array $rules = array(), array $messages = array())
-    {
-
-    }
+    public function validateRecursive()
+    {}
 }
