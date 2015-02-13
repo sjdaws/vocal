@@ -49,16 +49,16 @@ class Tests extends TestCase
     private function migrateDatabase()
     {
         // Laravel 5 changes console class
-        try {
-            $console = 'Illuminate\Contracts\Console\Kernel';
-            $class = new ReflectionClass($console);
+        try
+        {
+            $console = $this->app->make('Illuminate\Contracts\Console\Kernel');
         }
         catch (ReflectionException $Exception)
         {
-            $console = 'artisan';
+            $console = $this->app->make('artisan');
         }
 
-        $this->app->make($console)->call('migrate', array('--database' => 'testbench', '--path' => '../tests/Migrations'));
+        $console->call('migrate', array('--database' => 'testbench', '--path' => '../tests/Migrations'));
     }
 
     /**
