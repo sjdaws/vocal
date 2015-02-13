@@ -76,4 +76,15 @@ class Test extends Vocal
     {
         $this->callbackTest = $value;
     }
+
+    /**
+     * Set whether hydration is allowed or not
+     *
+     * @param  bool $value
+     * @return null
+     */
+    public function setAllowHydration($value)
+    {
+        $this->allowHydration = $value;
+    }
 }

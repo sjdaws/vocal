@@ -9,16 +9,17 @@ use Sjdaws\Vocal\Traits\Hydration;
 use Sjdaws\Vocal\Traits\Messages;
 use Sjdaws\Vocal\Traits\Relations;
 use Sjdaws\Vocal\Traits\Rules;
+use Sjdaws\Vocal\Traits\Model as SuperModel; // ;)
 use Sjdaws\Vocal\Traits\Validation;
 
 class Vocal extends Model
 {
-    use Events, Hashing, Hydration, Messages, Rules, Relations, Validation;
+    use Events, Hashing, Hydration, Messages, Rules, Relations, SuperModel, Validation;
 
     /**
      * Create a new model instance
      *
-     * @param  array $attributes
+     * @param array $attributes
      */
     public function __construct(array $attributes = array())
     {
@@ -29,7 +30,7 @@ class Vocal extends Model
     /**
      * Monitor events and trigger callbacks if they exist
      *
-     * @see \Illuminate\Database\Eloquent\Model::boot()
+     * @see    \Illuminate\Database\Eloquent\Model::boot()
      * @return null
      */
     public static function boot()

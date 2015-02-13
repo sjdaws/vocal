@@ -118,15 +118,4 @@ trait Hydration
             if ( ! is_null($data) && ! is_scalar($data)) unset($this->{$attribute});
         }
     }
-
-    /**
-     * Set whether hydration is allowed or not
-     *
-     * @param  bool $value
-     * @return null
-     */
-    public function setAllowHydration($value)
-    {
-        $this->allowHydration = $value;
-    }
 }
