@@ -21,10 +21,35 @@ trait Hydration
     private $hydrated = false;
 
     /**
+     * Fill the model with an array of attributes
+     *
+     * @param  array $attributes
+     * @return $this
+     *
+     * @throws \Illuminate\Database\Eloquent\MassAssignmentException
+     */
+    abstract public function fill(array $attributes);
+
+    /**
+     * Fire an event for a model
+     *
+     * @param  string $event
+     * @param  bool   $halt
+     * @return mixed
+     */
+    abstract protected function fireModelEvent($event, $halt = true);
+
+    /**
+     * Get all of the current attributes on the model
+     *
+     * @return array
+     */
+    abstract public function getAttributes();
+
+    /**
      * Determine what data we should use to hydrate a model
      *
-     * @param  array          $data
-     * @param  integer|string $index
+     * @param  array $data
      * @return array
      */
     private function getHydrationData(array $data = [])
@@ -52,7 +77,6 @@ trait Hydration
     public function hydrateModel(array $data = [])
     {
         // Fire hydrating event
-        var_dump($this->fireModelEvent('hydrating'));
         if ($this->fireModelEvent('hydrating') === false) return false;
 
         // Get the data we're using for this model
