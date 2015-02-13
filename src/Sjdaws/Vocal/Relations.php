@@ -2,7 +2,10 @@
 
 namespace Sjdaws\Vocal;
 
-class Relationships
+use Illuminate\Database\Eloquent\Relations\Relation;
+use ReflectionClass;
+
+class Relations
 {
     /**
      * The model we're checking relationships against

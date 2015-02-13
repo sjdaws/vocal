@@ -3,23 +3,15 @@
 namespace Sjdaws\Vocal;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Hashing\BcryptHasher;
+use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Str;
-use ReflectionClass;
 
 /**
  * @property string $primaryKey
  */
 class SuperModel extends Model
 {
-    /**
-     * The message bag instance containing validation error messages
-     *
-     * @var Illuminate\Support\MessageBag
-     */
-    protected $errors;
-
     /**
      * Whether to fill the model from input or not
      *
@@ -35,18 +27,18 @@ class SuperModel extends Model
     protected $hashable = array();
 
     /**
+     * Determine whether the model has been hydrated
+     *
+     * @var bool
+     */
+    private $hydrated = false;
+
+    /**
      * The events which will we observe
      *
      * @var array
      */
     private $observableEvents = array();
-
-    /**
-     * Determine whether the model has been hydrated
-     *
-     * @var bool
-     */
-    private $_hydratedByVocal = false;
 
     /**
      * Whether to validate before save or not
@@ -56,11 +48,11 @@ class SuperModel extends Model
     public $validateBeforeSave = false;
 
     /**
-     * Determine whether the model has been validated
+     * A validator instance
      *
-     * @var bool
+     * @var Validation
      */
-    private $_validatedByVocal = false;
+    protected $validator;
 
     /**
      * Create a new model instance
@@ -70,9 +62,6 @@ class SuperModel extends Model
     public function __construct(array $attributes = array())
     {
         parent::__construct($attributes);
-
-        // Create message bag for errors
-        $this->errors = new MessageBag;
 
         // Add event callbacks
         $this->addEventCallbacks(array('creat', 'delet', 'hydrat', 'sav', 'updat', 'validat'));
@@ -142,6 +131,20 @@ class SuperModel extends Model
     }
 
     /**
+     * Get hydration data from array or input if array is empty
+     *
+     * @param  array $data
+     * @return array
+     */
+    private function getHydrationData(array $data)
+    {
+        // If we don't have any data passed, and we're allowed to, use input
+        if ( ! count(array_filter($data)) && $this->fillFromInput) $data = Input::all();
+
+        return array_filter($data);
+    }
+
+    /**
      * Get the observable event names including any hooks
      *
      * @return array
@@ -185,22 +188,30 @@ class SuperModel extends Model
      * Hydrate a model from input or an array
      *
      * @param  array $data
-     * @return false|null
+     * @return bool
      */
     protected function hydrateModel(array $data)
     {
-        // Make sure we're using fillable, and we haven't previously filled the model which may overwrite stuff
-        if ( ! $this->_hydratedByVocal && $this->fillFromInput)
-        {
-            // Fire hydrating event
-            if ($this->fireModelEvent('hydrating') === false) return false;
+        // Get the data we're using for this model
+        $data = $this->getHydrationData($data);
 
-            // Fill from data and record we've filled it once
-            $this->fill($data);
-            $this->_hydratedByVocal = true;
+        // If we've already filled this model or we don't have data, abort
+        if ($this->hydrated || ! count($data)) return false;
 
-            $this->fireModelEvent('hydrated', false);
-        }
+        // Fire hydrating event
+        if ($this->fireModelEvent('hydrating') === false) return false;
+
+        // Fill from data and record we've filled it
+        $this->fill($data);
+        $this->hydrated = true;
+
+        // Remove any fields from the model which can't be submitted, such as objects and arrays
+        // - This will prevent errors with bound objects being saved twice
+        $this->removeInvalidAttributes();
+
+        $this->fireModelEvent('hydrated', false);
+
+        return true;
     }
 
     /**

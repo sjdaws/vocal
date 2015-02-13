@@ -27,7 +27,7 @@ class Ruleset
     public function __construct(Vocal $model, array $rules = array())
     {
         $this->model = $model;
-        $this->add(array_filter($rules));
+        $this->add($this->getRules($rules));
     }
 
     /**
@@ -55,6 +55,20 @@ class Ruleset
     public function get()
     {
         return $this->rules;
+    }
+
+    /**
+     * Get the rules we're going to use for this ruleset
+     *
+     * @param  array $rules
+     * @return array
+     */
+    private function getRules(array $rules = array())
+    {
+        // If the passed rules are empty, use model rules
+        if ( ! count($rules)) $rules = $this->model->rules;
+
+        return array_filter($rules);
     }
 
     /**
