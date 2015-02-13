@@ -195,8 +195,8 @@ class SuperModel extends Model
         // Get the data we're using for this model
         $data = $this->getHydrationData($data);
 
-        // If we've already filled this model or we don't have data, abort
-        if ($this->hydrated || ! count($data)) return false;
+        // If we've already filled this model, skip
+        if ($this->hydrated) return true;
 
         // Fire hydrating event
         if ($this->fireModelEvent('hydrating') === false) return false;

@@ -91,15 +91,8 @@ class Validation
         // If this model has already been validated, we don't need to do it again
         if ($this->result) return true;
 
-        // Fire validating event
-        if ($this->model->fireModelEvent('validating') === false) return false;
-
         // If we have no rules then validation will pass
-        if ( ! count($this->rules))
-        {
-            $this->model->fireModelEvent('validated', false);
-            return true;
-        }
+        if ( ! count($this->rules)) return true;
 
         // Create a new validator, and capture result
         $validator = Validator::make($this->model->getAttributes(), $this->rules, $this->messages);
@@ -107,8 +100,6 @@ class Validation
 
         // Update errors based on result
         $this->errors = ($this->result) ? new MessageBag : $validator->messages();
-
-        $this->model->fireModelEvent('validated', false);
 
         return $this->result;
     }

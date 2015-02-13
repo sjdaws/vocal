@@ -17,7 +17,13 @@ class Vocal extends SuperModel
         // Fill model attributes
         $this->hydrateModel($data);
 
+        // Fire validating event
+        if ($this->fireModelEvent('validating') === false) return false;
+
         $this->validator = new Validation($this, $rules, $messages);
+
+        $this->fireModelEvent('validated', false);
+
         return $this->validator->getResult();
     }
 
