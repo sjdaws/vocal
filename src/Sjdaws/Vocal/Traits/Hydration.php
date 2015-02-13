@@ -60,7 +60,7 @@ trait Hydration
     /**
      * Register a hydrated model event with the dispatcher
      *
-     * @param  Closure|string $callback
+     * @param  \Closure|string $callback
      * @return void
      */
     public static function hydrated($callback)
@@ -98,7 +98,7 @@ trait Hydration
     /**
      * Register a hydrating model event with the dispatcher
      *
-     * @param  Closure|string $callback
+     * @param  \Closure|string $callback
      * @return void
      */
     public static function hydrating($callback)
