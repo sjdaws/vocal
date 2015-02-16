@@ -327,7 +327,7 @@ class Vocal extends Model
      * Save a record then delete it
      *
      * @param  array $data
-     * @return bool
+     * @return bool|null
      */
     public function forceSaveAndDelete(array $data = [])
     {
@@ -613,7 +613,9 @@ class Vocal extends Model
      */
     private function mergeArrayFromIndex(array $to, array $from, $index = 0)
     {
-        if (count($from) > $index) for ($i = $index; $i < count($from); ++$i) $to[] = $from[$i];
+        $size = count($from);
+
+        if ($size > $index) for ($i = $index; $i < $size; ++$i) $to[] = $from[$i];
 
         return $to;
     }
@@ -631,7 +633,7 @@ class Vocal extends Model
         if ( ! $errors->count()) return $bag;
 
         // Add or merge errors into bag
-        if ($index) $bag->add($index, $errors);
+        if ($index !== null) $bag->add($index, $errors);
         else $bag->merge($errors);
 
         return $bag;
@@ -848,10 +850,10 @@ class Vocal extends Model
     /**
      * Save or validate a single recursive record
      *
-     * @param  string $method
-     * @param  string $name
-     * @param  array  $data
-     * @param  string $index
+     * @param  string              $method
+     * @param  string              $name
+     * @param  array               $data
+     * @param  integer|string|null $index
      * @return bool
      */
     private function recurseRecord($method, $name, array $data, $index = null)
@@ -912,7 +914,7 @@ class Vocal extends Model
      * @param  array $data
      * @param  array $rules
      * @param  array $messages
-     * @return bool
+     * @return bool|null
      */
     public function saveAndDelete(array $data = [], array $rules = [], array $messages = [])
     {
@@ -1034,10 +1036,10 @@ class Vocal extends Model
     /**
      * Attach two records together via relationship
      *
-     * @param  Vocal          $record
-     * @param  string         $relationship
-     * @param  string         $class
-     * @param  integer|string $index
+     * @param  Vocal               $record
+     * @param  string              $relationship
+     * @param  string              $class
+     * @param  integer|string|null $index
      * @return \Illuminate\Database\Eloquent\Model
      */
     private function setRelationship(Vocal $record, $relationship, $class, $index)
@@ -1051,7 +1053,9 @@ class Vocal extends Model
         }
 
         // belongsTo and morphTo become parent records via associate
-        if (method_exists($this->{$class}(), 'associate'))
+        $model = $this->{$class}();
+
+        if (method_exists($model, 'associate'))
         {
             return $model->associate($record)->forceSave();
         }
