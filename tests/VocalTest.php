@@ -275,4 +275,14 @@ class Tests extends TestCase
         $test5 = Test::find($test4->id);
         $this->assertNotNull($test5, 'Record failed to save when all data was valid');
     }
+
+    /**
+     * Test recursive saving
+     *
+     * @return void
+     */
+    public function testSaveRecursive()
+    {
+
+    }
 }

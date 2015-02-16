@@ -40,6 +40,13 @@ class Vocal extends Model
     private $dataset = [];
 
     /**
+     * The message bag instance containing validation error messages
+     *
+     * @var \Illuminate\Support\MessageBag
+     */
+    private $errors;
+
+    /**
      * The fields which should be hashed automatically
      *
      * @var array
@@ -89,6 +96,13 @@ class Vocal extends Model
     private static $observableEvents = [];
 
     /**
+     * The result for the last valdiation
+     *
+     * @var bool
+     */
+    private $result;
+
+    /**
      * The rules we will use to validate this record
      *
      * @var array
@@ -108,20 +122,6 @@ class Vocal extends Model
      * @var bool
      */
     public $validateBeforeSave = true;
-
-    /**
-     * The message bag instance containing validation error messages
-     *
-     * @var \Illuminate\Support\MessageBag
-     */
-    private $validationErrors;
-
-    /**
-     * The result for the last valdiation
-     *
-     * @var bool
-     */
-    private $validationResult;
 
     /**
      * Create a new model instance
@@ -189,6 +189,16 @@ class Vocal extends Model
 
         // Add event callbacks
         self::addEventCallbacks(['creat', 'delet', 'hydrat', 'restor', 'sav', 'updat', 'validat']);
+    }
+
+    /**
+     * Get errors from the last action
+     *
+     * @return \Illuminate\Support\MessageBag
+     */
+    public function getErrors()
+    {
+        return $this->errors;
     }
 
     /**
@@ -407,6 +417,16 @@ class Vocal extends Model
     }
 
     /**
+     * Get the result of the last action
+     *
+     * @return bool
+     */
+    public function getResult()
+    {
+        return $this->result;
+    }
+
+    /**
      * Get rule type and parameters
      *
      * @param  string $rule
@@ -417,26 +437,6 @@ class Vocal extends Model
         if (strpos($rule, ':') !== false) return explode(':', $rule, 2);
 
         return [$rule, null];
-    }
-
-    /**
-     * Get errors from validation
-     *
-     * @return \Illuminate\Support\MessageBag
-     */
-    public function getValidationErrors()
-    {
-        return $this->validationErrors;
-    }
-
-    /**
-     * Get the result of the last validation
-     *
-     * @return bool
-     */
-    public function getValidationResult()
-    {
-        return $this->validationResult;
     }
 
     /**
@@ -617,6 +617,28 @@ class Vocal extends Model
     }
 
     /**
+     * Prepare a record for saving or validating
+     *
+     * @param  array $data
+     * @param  array $rules
+     * @param  array $messages
+     * @return null
+     */
+    private function prepareRecord(array $data, array $rules, array $messages)
+    {
+        // Reset error bag
+        $this->errors = new MessageBag;
+
+        // Capture data
+        $this->setDataset($data);
+        $this->setRuleset($rules);
+        $this->setMessageset($messages);
+
+        // Fill model
+        $this->fillModel();
+    }
+
+    /**
      * Process rule set into rules
      *
      * @param  string $field
@@ -663,6 +685,121 @@ class Vocal extends Model
     }
 
     /**
+     * Perform a recursive action
+     *
+     * @param  string $method
+     * @param  array  $data
+     * @param  array  $rules
+     * @param  array  $messages
+     * @return bool
+     */
+    private function recurse($method, array $data = [], array $rules = [], array $messages = [])
+    {
+        // Make sure method is valid
+        if ( ! in_array($method, ['save', 'validate'])) return false;
+
+        // Save this record
+        $result = $this->{$method}($data, $rules, $messages);
+
+        // Check for relationships
+        $relationships = $this->getRelationships();
+
+        // Recurse into each relationship if we can
+        foreach ($relationships as $name => $type)
+        {
+            if ($type == 'one')
+            {
+                $this->recurseSingleRelationship($method, $name, $this->result, $this->errors);
+            }
+            else
+            {
+                $this->recurseManyRelationship($method, $name, $this->result, $this->errors);
+            }
+
+            // If a relationship fails, we fail
+            if ( ! $this->result) $result = false;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Save or validate a relationship
+     *
+     * @param  string $method
+     * @param  string $name
+     * @param  array  $data
+     * @return Vocal
+     */
+    private function recurseRelationship($method, $name, array $data)
+    {
+        // Get model and determine primary key column
+        $class = Str::camel($name);
+        $model = $this->{$class}()->getModel();
+        $primaryKey = (isset($model->primaryKey)) ? $model->primaryKey : 'id';
+
+        $key = array_get($data, $primaryKey);
+
+        // Find record and perform action on it
+        $record = $model->findOrCreateRecord($key);
+        $record->recurse($method, $data, $this->getParameters('ruleset', $name), $this->getParameters('messageset', $name));
+
+        return $record;
+    }
+
+    /**
+     * Validate a one to many relationship
+     *
+     * @param  string                         $method
+     * @param  string                         $name
+     * @param  bool                           &$result
+     * @param  \Illuminate\Support\MessageBag &$errors
+     * @return bool
+     */
+    private function recurseManyRelationship($method, $name, &$result, &$errors)
+    {
+        $dataset = $this->getParameters('dataset', $name);
+
+        foreach ($dataset as $index => $data)
+        {
+            $record = $this->recurseRelationship('validate', $name, $data);
+
+            // Capture errors
+            $errors = $this->mergeErrors($errors, $record->getErrors(), $index);
+
+            // Record failures
+            if ( ! $record->getResult()) $result = false;
+        }
+
+        // A positive result and no errors mean action was successful
+        return ($result && $errors->count() === 0);
+    }
+
+    /**
+     * Validate a relationship
+     *
+     * @param  string                         $method
+     * @param  string                         $name
+     * @param  bool                           &$result
+     * @param  \Illuminate\Support\MessageBag &$errors
+     * @return bool
+     */
+    private function recurseSingleRelationship($method, $name, &$result, &$errors)
+    {
+        $data = $this->getParameters('dataset', $name);
+        $record = $this->recurseRelationship('validate', $name, $data);
+
+        // Capture errors
+        $errors = $this->mergeErrors($errors, $record->getErrors());
+
+        // Record failure
+        if ( ! $record->getResult()) $result = false;
+
+        // A positive result and no errors mean action was successful
+        return ($result && $errors->count() === 0);
+    }
+
+    /**
      * Remove any fields which can't be submitted to the database
      *
      * @return void
@@ -685,30 +822,57 @@ class Vocal extends Model
      */
     public function save(array $data = [], array $rules = [], array $messages = [])
     {
-        // Capture data
-        $this->setDataset($data);
-        $this->setRuleset($rules);
-        $this->setMessageset($messages);
+        $this->prepareRecord($data, $rules, $messages);
 
-        // Fill model
-        $this->fillModel();
-
-        // Validate if we must
         if ($this->validateBeforeSave)
         {
-            // Abort if beforeValidate() fails
-            if ($this->fireModelEvent('validating') === false) return false;
-
-            $result = $this->validateRecord();
-
-            $this->fireModelEvent('validated', false);
-
-            // If validation failed, do save
-            if ( ! $result) return false;
+            // Validate, and if it fails abort save
+            if ( ! $this->validateRecord()) return false;
         }
+
+        // Hash any hashable attributes
+        $this->hashHashable();
 
         // Hand off to Model
         return parent::save();
+    }
+
+    /**
+     * Save a one to many relationship
+     *
+     * @param  string                         $name
+     * @param  \Illuminate\Support\MessageBag &$errors
+     * @return bool
+     */
+    private function saveManyRelationship($name, &$errors)
+    {
+        $dataset = $this->getParameters('dataset', $name);
+
+        foreach ($dataset as $index => $data)
+        {
+            $record = $this->recurseRelationship('save', $name, $data);
+
+            // Capture errors
+            $errors = $this->mergeErrors($errors, $record->getErrors(), $index);
+
+            // Attach record
+        }
+
+        // No errors mean validation passed
+        return ($errors->count() === 0);
+    }
+
+    /**
+     * Recursively save a record
+     *
+     * @param  array $data
+     * @param  array $rules
+     * @param  array $messages
+     * @return bool
+     */
+    public function saveRecursive(array $data = [], array $rules = [], array $messages = [])
+    {
+        return $this->recurse('save', $data, $rules, $messages);
     }
 
     /**
@@ -841,25 +1005,9 @@ class Vocal extends Model
      */
     public function validate(array $data = [], array $rules = [], array $messages = [])
     {
-        // Capture data
-        $this->setDataset($data);
-        $this->setRuleset($rules);
-        $this->setMessageset($messages);
+        $this->prepareRecord($data, $rules, $messages);
 
-        // Reset error bag
-        $this->validationErrors = new MessageBag;
-
-        // Fill model
-        $this->fillModel();
-
-        // Abort if beforeValidate() fails
-        if ($this->fireModelEvent('validating') === false) return false;
-
-        $result = $this->validateRecord();
-
-        $this->fireModelEvent('validated', false);
-
-        return $result;
+        return $this->validateRecord();
     }
 
     /**
@@ -874,46 +1022,24 @@ class Vocal extends Model
     }
 
     /**
-     * Validate a one to many relationship
-     *
-     * @param  string                         $name
-     * @param  \Illuminate\Support\MessageBag &$errors
-     * @return bool
-     */
-    private function validateManyRelationship($name, &$errors)
-    {
-        $dataset = $this->getParameters('dataset', $name);
-
-        foreach ($dataset as $index => $data)
-        {
-            $record = $this->validateRelationship($name, $data);
-
-            // Capture errors
-            $errors = $this->mergeErrors($errors, $record->getValidationErrors(), $index);
-        }
-
-        // No errors mean validation passed
-        return ($errors->count() === 0);
-    }
-
-    /**
      * Validate a single record
      *
      * @return bool
      */
     private function validateRecord()
     {
-        // If we have no rules then validation will pass
-        if ( ! count($this->rules)) return true;
+        // Abort if beforeValidate() fails
+        if ($this->fireModelEvent('validating') === false) return false;
 
-        // Create a new validator, and capture result
         $validator = Validator::make($this->getAttributes(), $this->rules, $this->messages);
-        $this->validationResult = $validator->passes();
+        $this->result = $validator->passes();
 
         // Update errors based on result
-        $this->validationErrors = ($this->validationResult) ? new MessageBag : $validator->messages();
+        $this->errors = ($this->result) ? new MessageBag : $validator->messages();
 
-        return $this->validationResult;
+        $this->fireModelEvent('validated', false);
+
+        return $this->result;
     }
 
     /**
@@ -926,71 +1052,7 @@ class Vocal extends Model
      */
     public function validateRecursive(array $data = [], array $rules = [], array $messages = [])
     {
-        // Validate this record
-        $result = $this->validate($data, $rules, $messages);
-
-        // Check for relationships
-        $relationships = $this->getRelationships();
-
-        // Validate each relationship
-        foreach ($relationships as $name => $type)
-        {
-            if ($type == 'one')
-            {
-                $subresult = $this->validateSingleRelationship($name, $this->validationErrors);
-            }
-            else
-            {
-                $subresult = $this->validateManyRelationship($name, $this->validationErrors);
-            }
-
-            // If a relationship fails, we fail
-            if ( ! $subresult) $result = false;
-        }
-
-        return $result;
-    }
-
-    /**
-     * Validate a relationship
-     *
-     * @param  string $name
-     * @param  array  $data
-     * @return Vocal
-     */
-    private function validateRelationship($name, array $data)
-    {
-        // Get model and determine primary key column
-        $class = Str::camel($name);
-        $model = $this->{$class}()->getModel();
-        $primaryKey = (isset($model->primaryKey)) ? $model->primaryKey : 'id';
-
-        $key = array_get($data, $primaryKey);
-
-        // Find record and validate it
-        $record = $model->findOrCreateRecord($key);
-        $record->validateRecursive($data, $this->getParameters('ruleset', $name), $this->getParameters('messageset', $name));
-
-        // Return validated record
-        return $record;
-    }
-
-    /**
-     * Validate a relationship
-     *
-     * @param  string                         $name
-     * @param  \Illuminate\Support\MessageBag &$errors
-     * @return bool
-     */
-    private function validateSingleRelationship($name, &$errors)
-    {
-        $data = $this->getParameters('dataset', $name);
-        $record = $this->validateRelationship($name, $data);
-
-        // Capture errors
-        $errors = $this->mergeErrors($errors, $record->getValidationErrors());
-
-        return $record->getValidationResult();
+        return $this->recurse('validate', $data, $rules, $messages);
     }
 
     /**
