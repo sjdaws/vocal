@@ -10,6 +10,11 @@ use Illuminate\Support\MessageBag;
 use Illuminate\Support\Str;
 use ReflectionClass;
 
+/**
+ * @method   withTrashed()
+ * @property bool $forceDeleting
+ * @property bool $softDelete
+ */
 class Vocal extends Model
 {
     /**
@@ -141,7 +146,7 @@ class Vocal extends Model
      * @param  array $events
      * @return null
      */
-    private static function addEventCallbacks(array $events)
+    private static function addEventCallbacks(array $events = [])
     {
         $hooks = ['before' => 'ing', 'after' => 'ed'];
 
@@ -247,7 +252,7 @@ class Vocal extends Model
      *
      * @param  string         $type
      * @param  integer|string $index
-     * @return null
+     * @return array
      */
     private function getParameters($type, $index = null)
     {
@@ -681,13 +686,12 @@ class Vocal extends Model
     /**
      * Validate a single record
      *
-     * @param  array          $data
-     * @param  array          $rules
-     * @param  array          $messages
-     * @param  integer|string $index
+     * @param  array $data
+     * @param  array $rules
+     * @param  array $messages
      * @return bool
      */
-    public function validate(array $data = [], array $rules = [], array $messages = [], $index = null)
+    public function validate(array $data = [], array $rules = [], array $messages = [])
     {
         // Capture data
         $this->setDataset($data);
@@ -726,16 +730,15 @@ class Vocal extends Model
      *
      * @param  string                        $name
      * @param  Illuminate\Support\MessageBag &$errors
-     * @return Vocal
+     * @return bool
      */
     private function validateManyRelationship($name, &$errors)
     {
-        // Assume validation passes
-        $result = true;
+        $dataset = $this->getParameters('dataset', $name);
 
-        foreach ($this->getParameters('dataset', $name) as $index => $data)
+        foreach ($dataset as $index => $data)
         {
-            $record = $this->validateRelationship($name, $data, $errors);
+            $record = $this->validateRelationship($name, $data);
 
             // Capture errors
             $errors = $this->mergeErrors($errors, $record->getValidationErrors(), $index);
@@ -818,7 +821,7 @@ class Vocal extends Model
 
         // Find record and validate it
         $record = $model->findOrCreateRecord($key);
-        $result = $record->validateRecursive($data, $this->getParameters('ruleset', $name), $this->getParameters('messageset', $name));
+        $record->validateRecursive($data, $this->getParameters('ruleset', $name), $this->getParameters('messageset', $name));
 
         // Return validated record
         return $record;
