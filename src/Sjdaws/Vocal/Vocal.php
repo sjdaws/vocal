@@ -290,15 +290,7 @@ class Vocal extends Model
      */
     public function forceSave(array $data = [], $recursive = false)
     {
-        // Save original setting
-        $validateBeforeSave = $this->validateBeforeSave;
-
-        $this->validateBeforeSave = false;
-        $result = ($recursive) ? $this->saveRecursive($data) : $this->save($data);
-
-        $this->validateBeforeSave = $validateBeforeSave;
-
-        return $result;
+        return ($recursive) ? $this->recurse('save', $data) : $this->saveRecord($data);
     }
 
     /**
@@ -739,7 +731,11 @@ class Vocal extends Model
         // Make sure method is valid
         if ( ! in_array($method, ['save', 'validate'])) return false;
 
-        // Save this record
+        // Disable validation
+        $validateBeforeSave = $this->validateBeforeSave;
+        $this->validateBeforeSave = false;
+
+        // Perform action
         $result = $this->{$method}($data, $rules, $messages);
 
         // Check for relationships
@@ -753,6 +749,9 @@ class Vocal extends Model
             // If a relationship fails, we fail
             if ( ! $subresult) $result = false;
         }
+
+        // Reset validation
+        $this->validateBeforeSave = $validateBeforeSave;
 
         return $result;
     }
@@ -841,15 +840,28 @@ class Vocal extends Model
      * @param  array $messages
      * @return bool
      */
-    public function save(array $data = [], array $rules = [], array $messages = [])
+    public function save(array $data = [], array $rules = [], array $messages = [], $force = false)
     {
-        $this->prepareRecord($data, $rules, $messages);
-
         if ($this->validateBeforeSave)
         {
             // Validate, and if it fails abort save
-            if ( ! $this->validateRecord()) return false;
+            if ( ! $this->validate($data, $rules, $messages)) return false;
         }
+
+        return $this->saveRecord($data, $rules, $messages);
+    }
+
+    /**
+     * Save a single record
+     *
+     * @param  array $data
+     * @param  array $rules
+     * @param  array $messages
+     * @return bool
+     */
+    private function saveRecord(array $data = [], array $rules = [], array $messages = [])
+    {
+        $this->prepareRecord($data, $rules, $messages);
 
         // Hash any hashable attributes
         $this->hashHashable();

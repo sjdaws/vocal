@@ -6,6 +6,7 @@ use Illuminate\Contracts\Console\Kernel;
 use Orchestra\Testbench\TestCase;
 use Sjdaws\Tests\Models\Test;
 use Sjdaws\Tests\Models\TestChild;
+use Sjdaws\Tests\Models\TestChildChild;
 use ReflectionClass;
 use ReflectionException;
 
@@ -315,16 +316,20 @@ class Tests extends TestCase
         $test3 = Test::find($test1->id);
         $this->assertNotNull($test3, 'Record failed to save even when it was forced');
 
+        // Make sure save was indeed recursive
+        //$test4 = TestChildChild::find($test1->children[1]->children[0]->id);
+        //$this->assertNotNull($test4, 'Child record failed to save recursively');
+
         // Reset data
         $data = array(
-            'name'        => 'Parent',
-            'description' => 'Parent record',
+            'name'        => 'Parent A',
+            'description' => 'Parent record A',
             'children'    => array(
-                array('name' => 'Child 1'),
+                array('name' => 'Child A'),
                 array(
-                    'name'     => 'Child 2',
+                    'name'     => 'Child B',
                     'children' => array(
-                        array('name' => 'ChildChild 1')
+                        array('name' => 'ChildChild A')
                     )
                 )
             )
