@@ -295,6 +295,18 @@ class Vocal extends Model
     }
 
     /**
+     * Save a record then delete it
+     *
+     * @param  array $data
+     * @return bool
+     */
+    public function forceSaveAndDelete(array $data = [])
+    {
+        $this->saveRecord($data);
+        return $this->delete();
+    }
+
+    /**
      * Save a record recursively regardless of whether it's valid or not
      *
      * @param  array $data
@@ -817,34 +829,10 @@ class Vocal extends Model
         $this->errors = $this->mergeErrors($this->errors, $record->getErrors(), $index);
 
         // Attach relationhip to record
-        if ($result) $this->setRelationship($class, $record, $name, $index);
+        if ($result) $this->setRelationship($record, $name, $class, $index);
 
         // Record failure
         return $result;
-    }
-
-    /**
-     * @return \Illuminate\Database\Eloquent\Model
-     */
-    private function setRelationship($relationship, $record, $name, $index)
-    {
-        // If we have an index we're dealing with a many relationship
-        if ($index !== null)
-        {
-            $collection = ($this->{$name}) ? $this->{$name} : new Collection;
-            $collection->put($index, $record);
-            return $this->setRelation($name, $collection);
-        }
-
-        // belongsTo and morphTo become parent records via associate
-        if (method_exists($this->{$relationship}(), 'associate'))
-        {
-            return $model->associate($record)->forceSave();
-        }
-        else
-        {
-            return $this->setRelation($name, $record);
-        }
     }
 
     /**
@@ -874,6 +862,23 @@ class Vocal extends Model
         if ($this->validateBeforeSave && ! $this->validate($data, $rules, $messages)) return false;
 
         return $this->saveRecord($data, $rules, $messages);
+    }
+
+    /**
+     * Save a record, then delete it if the save was successful
+     *
+     * @param  array $data
+     * @param  array $rules
+     * @param  array $messages
+     * @return bool
+     */
+    public function saveAndDelete(array $data = [], array $rules = [], array $messages = [])
+    {
+        $result = $this->save($data, $rules, $messages);
+
+        if ( ! $result) return false;
+
+        return $this->delete();
     }
 
     /**
@@ -981,6 +986,36 @@ class Vocal extends Model
                 $message = $this->getMessage($file, $key);
                 if ($message) $this->messages[$key] = $message;
             }
+        }
+    }
+
+    /**
+     * Attach two records together via relationship
+     *
+     * @param  Vocal          $record
+     * @param  string         $relationship
+     * @param  string         $class
+     * @param  integer|string $index
+     * @return \Illuminate\Database\Eloquent\Model
+     */
+    private function setRelationship(Vocal $record, $relationship, $class, $index)
+    {
+        // If we have an index we're dealing with a many relationship
+        if ($index !== null)
+        {
+            $collection = ($this->{$relationship}) ? $this->{$relationship} : new Collection;
+            $collection->put($index, $record);
+            return $this->setRelation($relationship, $collection);
+        }
+
+        // belongsTo and morphTo become parent records via associate
+        if (method_exists($this->{$class}(), 'associate'))
+        {
+            return $model->associate($record)->forceSave();
+        }
+        else
+        {
+            return $this->setRelation($relationship, $record);
         }
     }
 
