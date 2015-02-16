@@ -1,7 +1,7 @@
 {
     "name": "sjdaws/vocal",
     "description": "Recursive functionality for Eloquent in Laravel 4 and 5",
-    "version": "2.0.0-dev",
+    "version": "2.0.0",
     "type": "library",
     "license": "MIT",
     "keywords": ["laravel", "laravel4", "laravel5", "eloquent", "recursive", "hydration", "validation"],

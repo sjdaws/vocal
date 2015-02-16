@@ -122,7 +122,7 @@ class Vocal extends Model
      *
      * @var bool
      */
-    public $validateBeforeSave = true;
+    protected $validateBeforeSave = true;
 
     /**
      * Create a new model instance
@@ -386,7 +386,7 @@ class Vocal extends Model
      * @param  string $key
      * @return string
      */
-    public function getMessage($filename, $key)
+    private function getMessage($filename, $key)
     {
         $messageset = $this->getParameters('messageset');
 
@@ -482,7 +482,7 @@ class Vocal extends Model
      *
      * @return array
      */
-    public function getRelationships()
+    private function getRelationships()
     {
         $relationships = [];
 

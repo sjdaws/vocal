@@ -38,7 +38,7 @@ class UserController extends BaseController
         $result = $user->saveRecursive();
 
         // Capture errors to return via JSON model if we have some
-        if ( ! $result) $user->errors = $user->errors();
+        if ( ! $result) $user->errors = $user->getErrors();
 
         return $user;
     }

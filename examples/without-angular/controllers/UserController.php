@@ -22,7 +22,7 @@ class UserController extends BaseController
         $user = (Input::get('id')) ? User::find(Input::get('id')) : new User;
         $result = $user->saveRecursive();
 
-        if ( ! $result) return Redirect::back()->withInput()->with('errors', $user->errors());
+        if ( ! $result) return Redirect::back()->withInput()->with('errors', $user->getErrors());
 
         return View::make('addressbook')->with('user', $user)->with('success', true);
     }

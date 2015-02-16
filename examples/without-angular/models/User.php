@@ -22,18 +22,6 @@ class User extends Vocal
     );
 
     /**
-     * Enable soft deletions for this model
-     *
-     * @var bool
-     */
-    protected $softDelete = true;
-
-
-    /*********************************************************************************************
-     * Relationships
-     ********************************************************************************************/
-
-    /**
      * Join addresses
      *
      * @return Illuminate\Database\Eloquent\Relations\HasMany

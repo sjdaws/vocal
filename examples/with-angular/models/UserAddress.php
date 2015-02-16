@@ -22,18 +22,6 @@ class UserAddress extends Vocal
     );
 
     /**
-     * Enable soft deletions for this model
-     *
-     * @var bool
-     */
-    protected $softDelete = true;
-
-
-    /*********************************************************************************************
-     * Relationships
-     ********************************************************************************************/
-
-    /**
      * Join parent record (not really needed)
      *
      * @return Illuminate\Database\Eloquent\Relations\BelongsTo
