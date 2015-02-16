@@ -207,8 +207,6 @@ class Tests extends TestCase
         // Test with invalid input (name is missing)
         $test1 = new Test;
         $this->assertFalse($test1->validateRecursive(), 'Recursive validation should fail as child name is missing');
-dd(\Lang::get('validation.required'));
-dd($test1->getValidationErrors());
 
         // Reset data
         $data = array(

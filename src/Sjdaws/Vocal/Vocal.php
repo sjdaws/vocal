@@ -281,12 +281,12 @@ class Vocal extends Model
 
         // We have a couple of options where messages could be retrieved by default,
         // try: Model.php and model.php, as well as Model_Model.php and Model/Model.php
-        $messages = array(
+        $messages = [
             $filename . $fileKey,
             Str::lower($filename) . $fileKey,
             str_replace('_', '/', $filename) . $fileKey,
             Str::lower(str_replace('_', '/', $filename)) . $fileKey
-        );
+        ];
 
         // Cycle through messages trying to find one that is valid
         foreach ($messages as $message)
@@ -707,7 +707,7 @@ class Vocal extends Model
         // Determine file for validation messages
         $file = $this->languageFolder . '/' . str_replace('\\', '/', get_called_class()) . '.';
 
-        $this->messages = array();
+        $this->messages = [];
 
         // Process each rule
         foreach($this->rules as $field => $set)
@@ -718,7 +718,7 @@ class Vocal extends Model
                 list($type, $parameters) = $this->getRuleTypeAndParameters($rule);
 
                 // Generate a key using language file dot notation e.g. 'username.required'
-                $key = implode('.', array($field, $type));
+                $key = implode('.', [$field, $type]);
 
                 // Try to find a suitable error message
                 $message = $this->getMessage($file, $key);
