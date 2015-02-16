@@ -22,8 +22,8 @@ class CreateTestTable extends Migration
         Schema::create($this->table, function(Blueprint $t)
         {
             $t->increments('id')->unsigned();
-            $t->string('name', 50);
-            $t->string('description', 100);
+            $t->string('name', 50)->nullable();
+            $t->string('description', 100)->nullable();
             $t->string('password', 200)->nullable();
             $t->timestamps();
         });

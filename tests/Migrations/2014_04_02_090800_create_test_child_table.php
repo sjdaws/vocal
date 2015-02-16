@@ -23,7 +23,7 @@ class CreateTestChildTable extends Migration
         {
             $t->increments('id')->unsigned();
             $t->integer('test_id')->unsigned()->nullable();
-            $t->string('name', 100);
+            $t->string('name', 100)->nullable();
             $t->timestamps();
         });
     }

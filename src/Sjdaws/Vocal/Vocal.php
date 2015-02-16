@@ -107,7 +107,7 @@ class Vocal extends Model
      *
      * @var bool
      */
-    public $validateBeforeSave = false;
+    public $validateBeforeSave = true;
 
     /**
      * The message bag instance containing validation error messages
@@ -250,6 +250,25 @@ class Vocal extends Model
         }
 
         return new $this;
+    }
+
+    /**
+     * Save a record regardless of whether it's valid or not
+     *
+     * @param  array $data
+     * @return bool
+     */
+    public function forceSave(array $data = [])
+    {
+        // Save original setting
+        $validateBeforeSave = $this->validateBeforeSave;
+
+        $this->validateBeforeSave = false;
+        $result = $this->save($data);
+
+        $this->validateBeforeSave = $validateBeforeSave;
+
+        return $result;
     }
 
     /**
@@ -657,6 +676,42 @@ class Vocal extends Model
     }
 
     /**
+     * Save a record
+     *
+     * @param  array $data
+     * @param  array $rules
+     * @param  array $messages
+     * @return bool
+     */
+    public function save(array $data = [], array $rules = [], array $messages = [])
+    {
+        // Capture data
+        $this->setDataset($data);
+        $this->setRuleset($rules);
+        $this->setMessageset($messages);
+
+        // Fill model
+        $this->fillModel();
+
+        // Validate if we must
+        if ($this->validateBeforeSave)
+        {
+            // Abort if beforeValidate() fails
+            if ($this->fireModelEvent('validating') === false) return false;
+
+            $result = $this->validateRecord();
+
+            $this->fireModelEvent('validated', false);
+
+            // If validation failed, do save
+            if ( ! $result) return false;
+        }
+
+        // Hand off to Model
+        return parent::save();
+    }
+
+    /**
      * Select which set of messages we should use
      *
      * @param  array $messages
@@ -747,6 +802,20 @@ class Vocal extends Model
             $set = $this->pipeToArray($rule);
             $rule = $this->processRuleset($field, $set);
         }
+    }
+
+    /**
+     * Generate a database compatible timestamp using now as default
+     *
+     * @param  mixed $value
+     * @return string
+     */
+    public function timestamp($value = null)
+    {
+        // Use now if no time was passed
+        if ( ! $value) $value = $this->freshTimestamp();
+
+        return $this->fromDateTime($value);
     }
 
     /**
@@ -909,7 +978,7 @@ class Vocal extends Model
     /**
      * Validate a relationship
      *
-     * @param  string                        $name
+     * @param  string                         $name
      * @param  \Illuminate\Support\MessageBag &$errors
      * @return bool
      */

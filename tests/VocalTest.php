@@ -229,4 +229,50 @@ class Tests extends TestCase
         $test2 = new Test;
         $this->assertTrue($test2->validateRecursive(), "Recursive validation should pass but it didn't");
     }
+
+    /**
+     * Test saving a record
+     *
+     * @return void
+     */
+    public function testSave()
+    {
+        $data = array(
+            'description' => 'Parent record'
+        );
+
+        $input = $this->app->make('request');
+        $input->replace($data);
+
+        // Test with invalid input (name is missing)
+        $test1 = new Test;
+        $this->assertFalse($test1->save(), 'Save should abort due to failed validation');
+
+        // Make sure record didn't save
+        $test2 = Test::find($test1->id);
+        $this->assertNull($test2, 'Record save failed but was stored in the database anyway');
+
+        // Force it to save
+        $this->assertTrue($test1->forceSave(), 'Save should be forced, even with failed validation');
+
+        // Make sure it did save
+        $test3 = Test::find($test1->id);
+        $this->assertNotNull($test3, 'Record failed to save even when it was forced');
+
+        // Reset data
+        $data = array(
+            'name'        => 'Parent',
+            'description' => 'The parent'
+        );
+
+        $input->replace($data);
+
+        // Test again with correct data
+        $test4 = new Test;
+        $this->assertTrue($test4->save(), "Record should save but it didn't");
+
+        // Make sure it did save
+        $test5 = Test::find($test4->id);
+        $this->assertNotNull($test5, 'Record failed to save when all data was valid');
+    }
 }
