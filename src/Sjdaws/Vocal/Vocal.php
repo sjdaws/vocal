@@ -4,6 +4,7 @@ namespace Sjdaws\Vocal;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Hashing\BcryptHasher;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Validator;
@@ -815,8 +816,35 @@ class Vocal extends Model
         // Capture errors
         $this->errors = $this->mergeErrors($this->errors, $record->getErrors(), $index);
 
+        // Attach relationhip to record
+        if ($result) $this->setRelationship($class, $record, $name, $index);
+
         // Record failure
         return $result;
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Model
+     */
+    private function setRelationship($relationship, $record, $name, $index)
+    {
+        // If we have an index we're dealing with a many relationship
+        if ($index !== null)
+        {
+            $collection = ($this->{$name}) ? $this->{$name} : new Collection;
+            $collection->put($index, $record);
+            return $this->setRelation($name, $collection);
+        }
+
+        // belongsTo and morphTo become parent records via associate
+        if (method_exists($this->{$relationship}(), 'associate'))
+        {
+            return $model->associate($record)->forceSave();
+        }
+        else
+        {
+            return $this->setRelation($name, $record);
+        }
     }
 
     /**
@@ -840,13 +868,10 @@ class Vocal extends Model
      * @param  array $messages
      * @return bool
      */
-    public function save(array $data = [], array $rules = [], array $messages = [], $force = false)
+    public function save(array $data = [], array $rules = [], array $messages = [])
     {
-        if ($this->validateBeforeSave)
-        {
-            // Validate, and if it fails abort save
-            if ( ! $this->validate($data, $rules, $messages)) return false;
-        }
+        // Validate, and if it fails abort save
+        if ($this->validateBeforeSave && ! $this->validate($data, $rules, $messages)) return false;
 
         return $this->saveRecord($data, $rules, $messages);
     }
@@ -881,10 +906,7 @@ class Vocal extends Model
     public function saveRecursive(array $data = [], array $rules = [], array $messages = [])
     {
         // If we're validating, do the whole record first to head off any problems
-        if ($this->validateBeforeSave)
-        {
-            if ( ! $this->validateRecursive($data, $rules, $messages)) return false;
-        }
+        if ($this->validateBeforeSave && ! $this->validateRecursive($data, $rules, $messages)) return false;
 
         return $this->recurse('save', $data, $rules, $messages);
     }

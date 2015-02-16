@@ -317,8 +317,8 @@ class Tests extends TestCase
         $this->assertNotNull($test3, 'Record failed to save even when it was forced');
 
         // Make sure save was indeed recursive
-        //$test4 = TestChildChild::find($test1->children[1]->children[0]->id);
-        //$this->assertNotNull($test4, 'Child record failed to save recursively');
+        $test4 = TestChildChild::find(array_get($test1->toArray(), 'children.1.children.0.id'));
+        $this->assertNotNull($test4, 'Child record failed to save recursively on force save');
 
         // Reset data
         $data = array(
@@ -338,7 +338,11 @@ class Tests extends TestCase
         $input->replace($data);
 
         // Test again with correct data
-        $test4 = new Test;
-        $this->assertTrue($test4->saveRecursive(), "Recursive save should pass but it didn't");
+        $test5 = new Test;
+        $this->assertTrue($test5->saveRecursive(), "Recursive save should pass but it didn't");
+
+        // Make sure save was indeed recursive
+        $test6 = TestChildChild::find(array_get($test5->toArray(), 'children.1.children.0.id'));
+        $this->assertNotNull($test5, 'Child record failed to save recursively');
     }
 }
