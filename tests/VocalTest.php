@@ -283,6 +283,57 @@ class Tests extends TestCase
      */
     public function testSaveRecursive()
     {
+        $data = array(
+            'name'        => '',
+            'description' => 'Parent record',
+            'children'    => array(
+                array('name' => 'Child 1'),
+                array(
+                    'name'     => 'Child 2',
+                    'children' => array(
+                        array('name' => 'ChildChild 1')
+                    )
+                )
+            )
+        );
 
+        $input = $this->app->make('request');
+        $input->replace($data);
+
+        // Test with invalid input (name is missing)
+        $test1 = new Test;
+        $this->assertFalse($test1->saveRecursive(), 'Recursive save should fail due to failed validation');
+
+        // Make sure record didn't save
+        $test2 = Test::find($test1->id);
+        $this->assertNull($test2, 'Recursive save failed but was stored in the database anyway');
+
+        // Force it to save
+        $this->assertTrue($test1->forceSaveRecursive(), 'Recursive save should be forced, even with failed validation');
+
+        // Make sure it did save
+        $test3 = Test::find($test1->id);
+        $this->assertNotNull($test3, 'Record failed to save even when it was forced');
+
+        // Reset data
+        $data = array(
+            'name'        => 'Parent',
+            'description' => 'Parent record',
+            'children'    => array(
+                array('name' => 'Child 1'),
+                array(
+                    'name'     => 'Child 2',
+                    'children' => array(
+                        array('name' => 'ChildChild 1')
+                    )
+                )
+            )
+        );
+
+        $input->replace($data);
+
+        // Test again with correct data
+        $test4 = new Test;
+        $this->assertTrue($test4->saveRecursive(), "Recursive save should pass but it didn't");
     }
 }
