@@ -271,10 +271,12 @@ class Vocal extends Model
      */
     public function getMessage($filename, $key)
     {
+        $messageset = $this->getParameters('messageset');
+
         // If we have a matching key in messageset it wins
-        if ($this->getParameters('messageset', $key))
+        if (array_get($messageset, $key))
         {
-            return $this->getParameters('messageset', $key);
+            return array_get($messageset, $key);
         }
 
         $fileKey = ($this->languageKey) ? $this->languageKey . '.' . $key : $key;
@@ -715,7 +717,7 @@ class Vocal extends Model
             foreach ($set as $rule)
             {
                 // Remove parameters if we have them
-                list($type, $parameters) = $this->getRuleTypeAndParameters($rule);
+                list($type,) = $this->getRuleTypeAndParameters($rule);
 
                 // Generate a key using language file dot notation e.g. 'username.required'
                 $key = implode('.', [$field, $type]);
