@@ -209,6 +209,35 @@ class Vocal extends Model
     }
 
     /**
+     * Recursively extract error messages
+     *
+     * @param  array $error
+     * @return array
+     */
+    private function extractErrors($error)
+    {
+        $messages = [];
+
+        foreach ($error as $key => $errors)
+        {
+            // If error is a MessageBag, extract errors
+            if ($errors instanceof MessageBag) return $this->extractErrors($errors->toArray());
+
+            // If we have an array of errors preserve key
+            if (is_array($errors))
+            {
+                $messages[$key] = $this->extractErrors($errors);
+                continue;
+            }
+
+            // We must be down to a single error, just return it
+            return $errors;
+        }
+
+        return $messages;
+    }
+
+    /**
      * Fill a model from input or an array
      *
      * @return bool
@@ -318,11 +347,34 @@ class Vocal extends Model
     }
 
     /**
-     * Get errors from the last action
+     * Return the errors as an array
+     *
+     * @param  string $filter
+     * @return array
+     */
+    public function getErrors($filter = null)
+    {
+        // Create an array to hold errors
+        $messages = [];
+
+        // If we have no errors, abort
+        if ( ! $this->errors->count()) return $messages;
+
+        foreach ($this->errors->toArray() as $key => $error)
+        {
+            $messages[$key] = $this->extractErrors($error);
+        }
+
+        // Return a specific set of messages if asked
+        return array_get($messages, $filter);
+    }
+
+    /**
+     * Get error messagebag from the last action
      *
      * @return \Illuminate\Support\MessageBag
      */
-    public function getErrors()
+    public function getErrorBag()
     {
         return $this->errors;
     }
@@ -460,16 +512,6 @@ class Vocal extends Model
         $reflection = new ReflectionClass($class);
 
         return (in_array($reflection->getShortName(), ['BelongsTo', 'HasOne', 'MorphOne', 'MorphTo'])) ? 'one' : 'many';
-    }
-
-    /**
-     * Get the result of the last action
-     *
-     * @return bool
-     */
-    public function getResult()
-    {
-        return $this->result;
     }
 
     /**
@@ -826,7 +868,7 @@ class Vocal extends Model
         $result = $record->recurse($method, $data, $this->getParameters('ruleset', $name), $this->getParameters('messageset', $name));
 
         // Capture errors
-        $this->errors = $this->mergeErrors($this->errors, $record->getErrors(), $index);
+        $this->errors = $this->mergeErrors($this->errors, $record->getErrorBag(), $index);
 
         // Attach relationhip to record
         if ($result) $this->setRelationship($record, $name, $class, $index);
