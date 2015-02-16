@@ -717,7 +717,7 @@ class Vocal extends Model
     /**
      * Register a validated model event with the dispatcher
      *
-     * @param  Closure|string $callback
+     * @param  \Closure|string $callback
      * @return void
      */
     public static function validated($callback)
@@ -728,8 +728,8 @@ class Vocal extends Model
     /**
      * Validate a one to many relationship
      *
-     * @param  string                        $name
-     * @param  Illuminate\Support\MessageBag &$errors
+     * @param  string                         $name
+     * @param  \Illuminate\Support\MessageBag &$errors
      * @return bool
      */
     private function validateManyRelationship($name, &$errors)
@@ -831,7 +831,7 @@ class Vocal extends Model
      * Validate a relationship
      *
      * @param  string                        $name
-     * @param  Illuminate\Support\MessageBag &$errors
+     * @param  \Illuminate\Support\MessageBag &$errors
      * @return bool
      */
     private function validateSingleRelationship($name, &$errors)
@@ -848,7 +848,7 @@ class Vocal extends Model
     /**
      * Register a validating model event with the dispatcher
      *
-     * @param  Closure|string $callback
+     * @param  \Closure|string $callback
      * @return void
      */
     public static function validating($callback)
