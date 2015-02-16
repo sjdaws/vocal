@@ -86,5 +86,8 @@ class Test extends Vocal
     public function setAllowHydration($value)
     {
         $this->allowHydration = $value;
+
+        // We need to override callback flag if we're trying to prevent input
+        if ( ! $value) $this->setCallbackTest(1);
     }
 }

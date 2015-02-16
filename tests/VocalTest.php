@@ -115,7 +115,7 @@ class Tests extends TestCase
     }
 
     /**
-     * Test events
+     * Test events and callbacks
      *
      * @return null
      */
@@ -140,12 +140,93 @@ class Tests extends TestCase
         $test2 = new Test;
         $test2->setCallbackTest(1);
         $test2->hydrateModel();
-        $this->assertNull($test2->name, "beforeHydrate callback failed to prevent hydration");
+        $this->assertNull($test2->name, 'beforeHydrate callback failed to prevent hydration');
 
         // afterHydrate should alter the description
         $test3 = new Test;
         $test3->setCallbackTest(2);
         $test3->hydrateModel();
-        $this->assertTrue($test3->name == 'Callback', "afterHydrate callback failed to alter model");
+        $this->assertTrue($test3->name == 'Callback', 'afterHydrate callback failed to alter model');
+    }
+
+    /**
+     * Test validation
+     *
+     * @return void
+     */
+    public function testValidate()
+    {
+        $data = array(
+            'description' => 'Parent record'
+        );
+
+        $input = $this->app->make('request');
+        $input->replace($data);
+
+        // Test with invalid input (name is missing)
+        $test1 = new Test;
+        $this->assertFalse($test1->validate(), 'Validation should fail as name is missing');
+
+        // Reset data
+        $data = array(
+            'name'        => 'Parent',
+            'description' => 'The parent'
+        );
+
+        $input->replace($data);
+
+        // Test again with correct data
+        $test2 = new Test;
+        $this->assertTrue($test2->validate(), "Validation should pass but it didn't");
+    }
+
+    /**
+     * Test recursive validation
+     *
+     * @return void
+     */
+    public function testValidateRecursive()
+    {
+        $data = array(
+            'name'        => 'Parent',
+            'description' => 'Parent record',
+            'children'    => array(
+                array('name' => ''),
+                array(
+                    'name'     => 'Child 2',
+                    'children' => array(
+                        array('name' => 'ChildChild 1')
+                    )
+                )
+            )
+        );
+
+        $input = $this->app->make('request');
+        $input->replace($data);
+
+        // Test with invalid input (name is missing)
+        $test1 = new Test;
+        $this->assertFalse($test1->validateRecursive(), 'Recursive validation should fail as child name is missing');
+
+        // Reset data
+        $data = array(
+            'name'        => 'Parent',
+            'description' => 'Parent record',
+            'children'    => array(
+                array('name' => 'Child 1'),
+                array(
+                    'name'     => 'Child 2',
+                    'children' => array(
+                        array('name' => 'ChildChild 1')
+                    )
+                )
+            )
+        );
+
+        $input->replace($data);
+
+        // Test again with correct data
+        $test2 = new Test;
+        $this->assertTrue($test2->validateRecursive(), "Recursive validation should pass but it didn't");
     }
 }
