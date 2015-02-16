@@ -5,6 +5,7 @@ namespace Sjdaws\Vocal;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Hashing\BcryptHasher;
 use Illuminate\Support\Facades\Input;
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\MessageBag;
 use Illuminate\Support\Str;
@@ -51,6 +52,20 @@ class Vocal extends Model
      * @var bool
      */
     private $hydrated = false;
+
+    /**
+     * The folder which language files are stored in
+     *
+     * @var string
+     */
+    protected $languageFolder = 'validation';
+
+    /**
+     * The key within the language file where validation messages are stored
+     *
+     * @var string
+     */
+    protected $languageKey = null;
 
     /**
      * The messages we will use if a validation error occurs
@@ -245,6 +260,44 @@ class Vocal extends Model
     public function getObservableEvents()
     {
         return array_merge(parent::getObservableEvents(), self::$observableEvents);
+    }
+
+    /**
+     * Get message from a range of different file/key combinations
+     *
+     * @param  string $filename
+     * @param  string $key
+     * @return string
+     */
+    public function getMessage($filename, $key)
+    {
+        // If we have a matching key in messageset it wins
+        if ($this->getParameters('messageset', $key))
+        {
+            return $this->getParameters('messageset', $key);
+        }
+
+        $fileKey = ($this->languageKey) ? $this->languageKey . '.' . $key : $key;
+
+        // We have a couple of options where messages could be retrieved by default,
+        // try: Model.php and model.php, as well as Model_Model.php and Model/Model.php
+        $messages = array(
+            $filename . $fileKey,
+            Str::lower($filename) . $fileKey,
+            str_replace('_', '/', $filename) . $fileKey,
+            Str::lower(str_replace('_', '/', $filename)) . $fileKey
+        );
+
+        // Cycle through messages trying to find one that is valid
+        foreach ($messages as $message)
+        {
+            if (Lang::has($message))
+            {
+                return Lang::get($message);
+            }
+        }
+
+        return "";
     }
 
     /**
@@ -646,7 +699,32 @@ class Vocal extends Model
     private function setMessageset(array $messages = [])
     {
         // Passed messages rule, but we will use model messages if nothing has been passed
-        $this->messages = $this->messageset = $this->selectMessages($messages);
+        $this->messageset = $this->selectMessages($messages);
+
+        // If we don't have any rules, don't do anything because an error will never occur
+        if ( ! count($this->rules)) return;
+
+        // Determine file for validation messages
+        $file = $this->languageFolder . '/' . str_replace('\\', '/', get_called_class()) . '.';
+
+        $this->messages = array();
+
+        // Process each rule
+        foreach($this->rules as $field => $set)
+        {
+            foreach ($set as $rule)
+            {
+                // Remove parameters if we have them
+                list($type, $parameters) = $this->getRuleTypeAndParameters($rule);
+
+                // Generate a key using language file dot notation e.g. 'username.required'
+                $key = implode('.', array($field, $type));
+
+                // Try to find a suitable error message
+                $message = $this->getMessage($file, $key);
+                if ($message) $this->messages[$key] = $message;
+            }
+        }
     }
 
     /**
@@ -665,7 +743,6 @@ class Vocal extends Model
         {
             // Change pipe delimited rules to arrays
             $set = $this->pipeToArray($rule);
-
             $rule = $this->processRuleset($field, $set);
         }
     }
