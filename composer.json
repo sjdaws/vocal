@@ -1,7 +1,6 @@
 {
     "name": "sjdaws/vocal",
     "description": "Recursive functionality for Eloquent in Laravel 4 and 5",
-    "version": "2.0.0",
     "type": "library",
     "license": "MIT",
     "keywords": ["laravel", "laravel4", "laravel5", "eloquent", "recursive", "hydration", "validation"],
@@ -13,12 +12,12 @@
     ],
     "require": {
         "php": ">=5.4.0",
-        "illuminate/database": ">=4.0",
-        "illuminate/hashing": ">=4.0",
-        "illuminate/support": ">=4.0"
+        "illuminate/database": "4.0 - 5.0",
+        "illuminate/hashing": "4.0 - 5.0",
+        "illuminate/support": "4.0 - 5.0"
     },
     "require-dev": {
-        "orchestra/testbench": ">=2.0"
+        "orchestra/testbench": "2.0 - 3.0"
     },
     "repositories": [
         {
